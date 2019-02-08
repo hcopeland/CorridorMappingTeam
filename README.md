@@ -1,2 +1,2 @@
 # CorridorMappingTeam
-Code Repository for Corridor Mapping Team Project
+Code Repository for Western Corridor Mapping Team Project
