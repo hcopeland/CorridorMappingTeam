@@ -7,7 +7,7 @@
 create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/sequences",
                        BBs_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UD",
                        footprint_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/Footprint",
-                       metadata_fldr="C:/Users/jmerkle/Desktop/Mapp2/tab6output/",
+                       metadata_fldr="C:/Users/jmerkle/Desktop/Mapp2/tab6output",
                        cores=11, location.error=20, cell.size=50, max.lag=8, contour=99,
                        proj_of_dbfs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"){
   
