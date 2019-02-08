@@ -2,9 +2,9 @@
 # The following code finishes teh BB analysis of migration corridors after one has 
 # completed tab 5 in Migration Mapper and clicked the export button on tab 6.
 
-#source the packages you will need
+#source the functions you will need
 source("C:/Users/jmerkle/Documents/GitHub/CorridorMappingTeam/functions/create.seqs.R")
-source("C:/Users/jmerkle/Documents/GitHub/CorridorMappingTeam/functions/create.bbs.R")
+source("C:/Users/jmerkle/Documents/GitHub/CorridorMappingTeam/functions/create.BBs.R")
 source("C:/Users/jmerkle/Documents/GitHub/CorridorMappingTeam/functions/create.BB.avgs.R")
 
 #step 1. Create sequences from the output of Migration Mapper (tab 6)
@@ -16,7 +16,7 @@ create.seqs(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6",
 
 #step 2. Conduct BB analyses. You will want use parrallel processing for this one. 
 # This also spits out a metadata file of the results of the BB analysis
-create.bbs(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/sequences",
+create.BBs(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/sequences",
                   BBs_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/UDs",  #it will make this folder for you
                   footprint_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/Footprints",  #it will make this folder for you
                   metadata_fldr="C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/",

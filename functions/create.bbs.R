@@ -4,7 +4,7 @@
 # contour is the % contour around UD for the footprint. Usually 99
 # written by Jerod Merkle, 7 Feb 2019 (but based on Hall Sawyer's code)
 
-create.bbs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/sequences",
+create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/sequences",
                        BBs_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UD",
                        footprint_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/Footprint",
                        metadata_fldr="C:/Users/jmerkle/Desktop/Mapp2/tab6output/",
