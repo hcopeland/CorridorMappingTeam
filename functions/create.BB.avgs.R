@@ -1,0 +1,99 @@
+# This function takes in individual BBs and creates averaged individual BBs and footprints
+# and population UDs and population footprints
+# written by Jerod Merkle, 8 Jan 2019
+# based on code from Hall Sawyer
+
+create.BB.avgs <- function(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UD",
+                        pop_BBs_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UD_pop",
+                        pop_footprint_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/Footprint_pop",
+                        contour=99,
+                        proj_of_ascs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"){
+  
+  #manage packages
+  if(all(c("stringr", "raster", "BBMM") %in% installed.packages()[,1])==FALSE)
+    stop("You must install the following packages: raster, BBMM, and stringr")
+  require(stringr)
+  require(raster)
+  require(BBMM)
+  
+  #check the new directories
+  if(dir.exists(pop_BBs_out_fldr)==FALSE){
+    dir.create(pop_BBs_out_fldr)
+  }
+  if(length(dir(pop_BBs_out_fldr))> 0)
+    stop("Your pop_BBs_out_fldr Has something in it. It should be empty!")
+  if(dir.exists(pop_footprint_out_fldr)==FALSE){
+    dir.create(pop_footprint_out_fldr)
+  }
+  if(length(dir(pop_footprint_out_fldr))> 0)
+    stop("Your pop_footprint_out_fldr Has something in it. It should be empty!")
+  
+  fls <- dir(BBs_fldr)
+  ids <- str_split_fixed(fls, "_",3)[,1]
+  ids_unique <- unique(ids)
+  
+  for(i in 1:length(ids_unique)){
+    if(length(ids[ids_unique[i] == ids])==1){
+      bb <- raster(paste(BBs_fldr, "/", fls[ids_unique[i] == ids], sep=""))   # when there is just 1 individual
+    }else{
+      fls2 <- fls[ids_unique[i] == ids]
+      bb <- raster(paste(BBs_fldr, "/", fls2[1], sep=""))
+      for(e in 2:length(fls2)){
+        bb <- addLayer(bb, raster(paste(BBs_fldr, "/", fls2[e], sep="")))
+      }
+      if(nlayers(bb) != length(fls2))
+        stop("You have a problem. See error 1.")
+      bb <- mean(bb)
+      bb <- bb/sum(values(bb))   #verify that they add up to 1
+    }
+    #output averaged individual ASCII file
+    m <- as(bb, "SpatialGridDataFrame")
+    write.asciigrid(m, paste(pop_BBs_out_fldr,"/",ids[i],"_ASCII.asc",sep=""), attr=1)
+    
+    #99% contours
+    bb <- list('Brownian motion variance'=0,x=coordinates(bb)[,1],y=coordinates(bb)[,2],probability=values(bb))
+    contours <- bbmm.contour(bb, levels=contour, plot=F)
+    # Create data.frame indicating cells within the each contour and export as Ascii Grid
+    contour.99 <- data.frame(x = bb$x, y = bb$y, probability = bb$probability)
+    # contour.99 <- contour.99[contour.99$probability >= contours$Z[1],]
+    contour.99$in.out <- ifelse(contour.99$probability >= contours$Z[1], 1, 0)
+    #write out footprint for individual
+    m <- SpatialPixelsDataFrame(points = contour.99[c("x", "y")], data=contour.99)
+    m <- as(m, "SpatialGridDataFrame")
+    write.asciigrid(m, paste(pop_footprint_out_fldr,"/",ids[i],"_99pct_contour.asc",sep=""), attr=ncol(m))
+  }
+  
+  #create overall averages
+  fls <- dir(pop_BBs_out_fldr)
+  bb <- raster(paste(pop_BBs_out_fldr, "/", fls[1], sep=""))
+  for(i in 2:length(fls)){
+    bb <- addLayer(bb, raster(paste(pop_BBs_out_fldr, "/", fls[i], sep="")))
+  }
+  if(nlayers(bb) != length(fls))
+    stop("You have a problem. See error 3.")
+  bb <- mean(bb)
+  bb <- bb/sum(values(bb))   #verify that they add up to 1
+  #output averaged individual ASCII file
+  m <- as(bb, "SpatialGridDataFrame")
+  write.asciigrid(m, paste(pop_BBs_out_fldr,"/","averageUD.asc",sep=""), attr=1)
+  projection(bb) <- proj_of_ascs
+  writeRaster(bb, filename = paste(pop_BBs_out_fldr,"/","averageUD.img",sep=""), format="HFA")
+  
+  #create overall population footprint
+  fls <- dir(pop_footprint_out_fldr)
+  bb <- raster(paste(pop_footprint_out_fldr, "/", fls[1], sep=""))
+  for(i in 2:length(fls)){
+    bb <- addLayer(bb, raster(paste(pop_footprint_out_fldr, "/", fls[i], sep="")))
+  }
+  if(nlayers(bb) != length(fls))
+    stop("You have a problem. See error 4.")
+  bb <- sum(bb)
+  #output averaged individual ASCII file
+  m <- as(bb, "SpatialGridDataFrame")
+  write.asciigrid(m, paste(pop_footprint_out_fldr,"/","popFootprint.asc",sep=""), attr=1)
+  projection(bb) <- proj_of_ascs
+  writeRaster(bb, filename = paste(pop_footprint_out_fldr,"/","popFootprint.img",sep=""), format="HFA")
+  print("Success. Check your folders")
+  return("Done.")
+} #end of function
+
