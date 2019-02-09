@@ -29,14 +29,18 @@ create.BB.avgs <- function(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output
     stop("Your pop_footprint_out_fldr Has something in it. It should be empty!")
   
   fls <- dir(BBs_fldr)
+  print(paste("You have ", length(fls), " sequences with successful BBs.", sep=""))
   ids <- str_split_fixed(fls, "_",3)[,1]
   ids_unique <- unique(ids)
+  print(paste("You have ", length(ids_unique), " unique individuals with successful BBs.", sep=""))
   
   for(i in 1:length(ids_unique)){
-    if(length(ids[ids_unique[i] == ids])==1){
-      bb <- raster(paste(BBs_fldr, "/", fls[ids_unique[i] == ids], sep=""))   # when there is just 1 individual
+    if(i == round(length(ids_unique)/2,0))
+      print("Your are half done.")
+    if(length(ids[ids == ids_unique[i]])==1){
+      bb <- raster(paste(BBs_fldr, "/", fls[ids == ids_unique[i]], sep=""))   # when there is just 1 individual
     }else{
-      fls2 <- fls[ids_unique[i] == ids]
+      fls2 <- fls[ids == ids_unique[i]]
       bb <- raster(paste(BBs_fldr, "/", fls2[1], sep=""))
       for(e in 2:length(fls2)){
         bb <- addLayer(bb, raster(paste(BBs_fldr, "/", fls2[e], sep="")))
@@ -48,7 +52,7 @@ create.BB.avgs <- function(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output
     }
     #output averaged individual ASCII file
     m <- as(bb, "SpatialGridDataFrame")
-    write.asciigrid(m, paste(pop_BBs_out_fldr,"/",ids[i],"_ASCII.asc",sep=""), attr=1)
+    write.asciigrid(m, paste(pop_BBs_out_fldr,"/",ids_unique[i],"_ASCII.asc",sep=""), attr=1)
     
     #99% contours
     bb <- list('Brownian motion variance'=0,x=coordinates(bb)[,1],y=coordinates(bb)[,2],probability=values(bb))
@@ -60,7 +64,7 @@ create.BB.avgs <- function(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output
     #write out footprint for individual
     m <- SpatialPixelsDataFrame(points = contour.99[c("x", "y")], data=contour.99)
     m <- as(m, "SpatialGridDataFrame")
-    write.asciigrid(m, paste(pop_footprint_out_fldr,"/",ids[i],"_99pct_contour.asc",sep=""), attr=ncol(m))
+    write.asciigrid(m, paste(pop_footprint_out_fldr,"/",ids_unique[i],"_99pct_contour.asc",sep=""), attr=ncol(m))
   }
   
   #create overall averages

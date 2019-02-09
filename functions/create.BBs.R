@@ -139,6 +139,8 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
   sfStop()
   if(length(u) != nrow(regBB))
     print("There is a problem (see error 1).")
+  if(any(regBB$brownian.motion.variance > 8000))
+    print("WARNING: You have BB motion variances that are > 8,000!!! Take a look at your metadata file.")
   write.csv(regBB, file=paste(metadata_fldr,"/metadata.csv",sep=""), row.names=FALSE)
   print("Success! Check your folders.")
   return("Done.")

@@ -2,16 +2,6 @@
 # written by Jerod Merkle, 8 Jan 2019
 # based on code from Hall Sawyer
 
-
-PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/UDs_pop/averageUD.asc"
-PopFootprint_asc = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/Footprints_pop/popFootprint.asc"
-pop_BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/Footprints_pop"
-out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/final_products"
-stopover_percent=10; corridor_percents=c(10, 20);min_area = 20000
-simplify = TRUE; tolerance = 100 # unites are meters
-proj_of_ascs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"
-
-
 create.corridors.stopovers <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/UDs_pop/averageUD.asc",
                                        PopFootprint_asc = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/Footprints_pop/popFootprint.asc",
                                        pop_BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/Footprints_pop",
@@ -72,7 +62,7 @@ create.corridors.stopovers <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Map
   
   popFootprint <- popFootprint/numb_ids
   
-  corridor_percents <- corridor_percents[corridor_percents/100 > 2/numb_ids]
+  corridor_percents <- corridor_percents[(corridor_percents/100) > (2/numb_ids)]
   
   thresholdQuantiles = c(0, c(2/numb_ids)-0.0001, (corridor_percents/100)-0.0001, .99)  #this starts with low 1 or more, then low 2 or more, then the other percents
   thresholdQuantiles_names <- c(1,2,corridor_percents)
