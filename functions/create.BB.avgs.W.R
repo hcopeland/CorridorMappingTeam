@@ -3,10 +3,8 @@
 # written by Jerod Merkle, 8 Jan 2019
 # based on code from Hall Sawyer
 
-create.BB.avgs <- function(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UD",
-                        pop_BBs_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UD_pop",
-                        pop_footprint_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/Footprint_pop",
-                        contour=99,
+create.BB.avgs.W <- function(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDsW",
+                        pop_BBs_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UD_popW",
                         proj_of_ascs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"){
   
   #manage packages
@@ -22,11 +20,6 @@ create.BB.avgs <- function(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output
   }
   if(length(dir(pop_BBs_out_fldr))> 0)
     stop("Your pop_BBs_out_fldr Has something in it. It should be empty!")
-  if(dir.exists(pop_footprint_out_fldr)==FALSE){
-    dir.create(pop_footprint_out_fldr)
-  }
-  if(length(dir(pop_footprint_out_fldr))> 0)
-    stop("Your pop_footprint_out_fldr Has something in it. It should be empty!")
   
   print(paste0("Start time: ", Sys.time()))
   
@@ -60,19 +53,6 @@ create.BB.avgs <- function(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output
     slot(slot(m, "grid"), "cellsize") <- rep(mean(cs), 2) 
     write.asciigrid(m, paste(pop_BBs_out_fldr,"/",ids_unique[i],"_ASCII.asc",sep=""), attr=1)
     
-    #99% contours
-    bb <- list('Brownian motion variance'=0,x=coordinates(bb)[,1],y=coordinates(bb)[,2],probability=values(bb))
-    contours <- bbmm.contour(bb, levels=contour, plot=F)
-    # Create data.frame indicating cells within the each contour and export as Ascii Grid
-    contour.99 <- data.frame(x = bb$x, y = bb$y, probability = bb$probability)
-    # contour.99 <- contour.99[contour.99$probability >= contours$Z[1],]
-    contour.99$in.out <- ifelse(contour.99$probability >= contours$Z[1], 1, 0)
-    #write out footprint for individual
-    m <- SpatialPixelsDataFrame(points = contour.99[c("x", "y")], data=contour.99)
-    m <- as(m, "SpatialGridDataFrame")
-    cs <- slot(slot(m, "grid"), "cellsize") 
-    slot(slot(m, "grid"), "cellsize") <- rep(mean(cs), 2) 
-    write.asciigrid(m, paste(pop_footprint_out_fldr,"/",ids_unique[i],"_99pct_contour.asc",sep=""), attr=ncol(m))
   }
   
   #create overall averages
@@ -89,26 +69,9 @@ create.BB.avgs <- function(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output
   m <- as(bb, "SpatialGridDataFrame")
   cs <- slot(slot(m, "grid"), "cellsize") 
   slot(slot(m, "grid"), "cellsize") <- rep(mean(cs), 2) 
-  write.asciigrid(m, paste(pop_BBs_out_fldr,"/","averageUD.asc",sep=""), attr=1)
+  write.asciigrid(m, paste(pop_BBs_out_fldr,"/","averageUD_winter.asc",sep=""), attr=1)
   projection(bb) <- proj_of_ascs
-  writeRaster(bb, filename = paste(pop_BBs_out_fldr,"/","averageUD.img",sep=""), format="HFA")
-  
-  #create overall population footprint
-  fls <- dir(pop_footprint_out_fldr)
-  bb <- raster(paste(pop_footprint_out_fldr, "/", fls[1], sep=""))
-  for(i in 2:length(fls)){
-    bb <- addLayer(bb, raster(paste(pop_footprint_out_fldr, "/", fls[i], sep="")))
-  }
-  if(nlayers(bb) != length(fls))
-    stop("You have a problem. See error 4.")
-  bb <- sum(bb)
-  #output averaged individual ASCII file
-  m <- as(bb, "SpatialGridDataFrame")
-  cs <- slot(slot(m, "grid"), "cellsize") 
-  slot(slot(m, "grid"), "cellsize") <- rep(mean(cs), 2) 
-  write.asciigrid(m, paste(pop_footprint_out_fldr,"/","popFootprint.asc",sep=""), attr=1)
-  projection(bb) <- proj_of_ascs
-  writeRaster(bb, filename = paste(pop_footprint_out_fldr,"/","popFootprint.img",sep=""), format="HFA")
+  writeRaster(bb, filename = paste(pop_BBs_out_fldr,"/","averageUD_winter.img",sep=""), format="HFA")
   print(paste0("End time: ", Sys.time()))
   return("Done. Check your folders.")
 } #end of function

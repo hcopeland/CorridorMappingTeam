@@ -1,14 +1,13 @@
 # This function takes a folder of migration sequences (in .dbf format)
 # and creates regular brownian bridges from them
 # location.error is in meters, cell size is in meters. max.lag is in hours
-# contour is the % contour around UD for the footprint. Usually 99
-# written by Jerod Merkle, 7 Feb 2019 (but based on Hall Sawyer's code)
+# written by Jerod Merkle, 24 Feb 2019 (but based on Hall Sawyer's code)
 
-create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/sequences",
-                       BBs_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UD",
-                       footprint_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/Footprint",
+create.BBs.W <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/sequencesW",
+                       BBs_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDsW",
                        metadata_fldr="C:/Users/jmerkle/Desktop/Mapp2/tab6output",
-                       cores=11, location.error=20, cell.size=50, max.lag=8, contour=99,time.step=10,
+                       mindays=30,   #if an individual animal has less than this many days in a given year's winter data, it will be removed
+                       cores=11, location.error=20, cell.size=50, max.lag=8, time.step=10,
                        proj_of_dbfs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"){
   
   #manage packages
@@ -27,11 +26,6 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
   }
   if(length(dir(BBs_out_fldr))> 0)
     stop("Your BBs_out_fldr Has something in it. It should be empty!")
-  if(dir.exists(footprint_out_fldr)==FALSE){
-    dir.create(footprint_out_fldr)
-  }
-  if(length(dir(footprint_out_fldr))> 0)
-    stop("Your footprint_out_fldr Has something in it. It should be empty!")
   if(dir.exists(metadata_fldr)==FALSE){
     dir.create(metadata_fldr)
   }
@@ -43,14 +37,30 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
   print(paste0("You have ", length(fls), " sequences."))
   d <- do.call(rbind, lapply(1:length(fls), function(i){
     db <- read.dbf(paste(seqs_fldr, fls[i],sep="/"), as.is=TRUE)
-    db$mig <- sub(".dbf","",fls[i])
+    db$wint <- sub(".dbf","",fls[i])
     return(db)
   }))
   #check and make sure the columns are correct. 
   if(all(c("date","x","y") %in% names(d)) == FALSE) 
     stop("There is an issue with the columns in your sequences. See Error 2.")
   
-  d$date <- as.POSIXct(strptime(d$date,format = "%Y-%m-%d %H:%M:%S"), tz="GMT")  
+  d$date <- as.POSIXct(strptime(d$date,format = "%Y-%m-%d %H:%M:%S"), tz="GMT") 
+  if(any(is.na(d$date))) 
+    stop("There is an issue with your date columns. See Error 2a.")
+  
+  # remove any sequences that do not have > mindays
+  jul <- as.numeric(strftime(d$date, format = "%j", tz = "GMT"))
+  u <- unique(d$wint)
+  ids2keep <- do.call(c, lapply(1:length(u), function(i){
+    if(length(unique(jul[d$wint == u[i]])) >= mindays){
+      return(u[i])
+    }else{
+      return(NULL)
+    }
+  }))
+  print(paste0("You are removing ", length(u)-length(ids2keep), " sequences because there are less than ", mindays, " days worth of data!"))
+  
+  d <- d[d$wint %in% ids2keep,]
   
   #Create a grid to calculate BBs over
   dsp <- d
@@ -65,17 +75,17 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
   
   print(paste0("The number of cells in your population grid is ", ncell(grd), "."))
   
-  u <- unique(d$mig)
+  u <- unique(d$wint)
   
   sfInit(parallel = T, cpus = cores)   #must change the cpus
-  sfExport("d", "grd", "u", "max.lag", "location.error","contour",
-           "BBs_out_fldr","footprint_out_fldr","time.step")
+  sfExport("d", "grd", "u", "max.lag", "location.error",
+           "BBs_out_fldr","time.step")
   sfLibrary(BBMM)
   sfLibrary(raster)
   regBB <- do.call(rbind, sfClusterApplyLB(1:length(u), function(i){
     start.time <- Sys.time()
     
-    temp <- d[d$mig==u[i],]
+    temp <- d[d$wint==u[i],]
     temp <- temp[order(temp$date),]
     
     #prepare only the cells to run BB over
@@ -125,11 +135,6 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
       m <- as(m, "SpatialGridDataFrame")
       write.asciigrid(m, paste(BBs_out_fldr,"/",u[i],"_ASCII.asc",sep=""), attr=3)
       
-      #output 99% contour
-      contours <- bbmm.contour(bb, levels=contour, plot=F)
-      m$in.out <- ifelse(m$z >= contours$Z, 1, 0)
-      write.asciigrid(m, paste(footprint_out_fldr,"/",u[i],"_99pct_contour.asc",sep=""), attr=ncol(m))
-      
       #gather summary info
       return(data.frame(input.file=u[i],
                         brownian.motion.variance=round(bb[[1]],2),
@@ -158,7 +163,7 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
     if(any(na.omit(regBB$brownian.motion.variance) > 8000))
       print("WARNING: You have BB motion variances that are > 8,000!!! Take a look at your metadata file.")
   }
-  write.csv(regBB, file=paste(metadata_fldr,"/metadata.csv",sep=""), row.names=FALSE)
+  write.csv(regBB, file=paste(metadata_fldr,"/metadata_winter.csv",sep=""), row.names=FALSE)
   print(paste0("End time: ", Sys.time()))
   return("Done. Check your folders.")
 }#end function
