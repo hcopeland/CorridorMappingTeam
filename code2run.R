@@ -62,7 +62,10 @@ source("C:/Users/jmerkle/Documents/GitHub/CorridorMappingTeam/functions/create.s
 source("C:/Users/jmerkle/Documents/GitHub/CorridorMappingTeam/functions/create.BBs.W.R")
 source("C:/Users/jmerkle/Documents/GitHub/CorridorMappingTeam/functions/create.BB.avgs.W.R")
 source("C:/Users/jmerkle/Documents/GitHub/CorridorMappingTeam/functions/create.core.areas.W.R")
+source("C:/Users/jmerkle/Documents/GitHub/CorridorMappingTeam/functions/calc.winter.dates.R")
 
+calc.winter.dates(mig.metadata.file="C:/Users/jmerkle/Desktop/Mapp2/tab6output/metadata.csv",
+                              qtl.end.fall.mig=0.95, qtl.start.spring.mig=0.05)
 
 #step 1. Create winter sequences from the output of Migration Mapper (tab 6)
 create.seqs.W(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output", 
