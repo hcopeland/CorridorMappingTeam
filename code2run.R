@@ -62,18 +62,15 @@ source("C:/Users/jmerkle/Documents/GitHub/CorridorMappingTeam/functions/create.s
 source("C:/Users/jmerkle/Documents/GitHub/CorridorMappingTeam/functions/create.BBs.W.R")
 source("C:/Users/jmerkle/Documents/GitHub/CorridorMappingTeam/functions/create.BB.avgs.W.R")
 source("C:/Users/jmerkle/Documents/GitHub/CorridorMappingTeam/functions/create.core.areas.W.R")
-source("C:/Users/jmerkle/Documents/GitHub/CorridorMappingTeam/functions/calc.winter.dates.R")
-
-calc.winter.dates(mig.metadata.file="C:/Users/jmerkle/Desktop/Mapp2/tab6output/metadata.csv",
-                              qtl.end.fall.mig=0.95, qtl.start.spring.mig=0.05)
 
 #step 1. Create winter sequences from the output of Migration Mapper (tab 6)
 create.seqs.W(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output", 
               shpfl_name= "pointsOut_20190207093941" ,
               idname="newUid",  #name of the column representing animal ID
               datename="nwMstrD",   #name of the column representing date in POSIX format
-              winterStart="12-01",  #start of winter %m-%d  
-              winterEnd="02-28",  #end of winter  %m-%d
+              mig.metadata.file="C:/Users/jmerkle/Desktop/Mapp2/tab6output/metadata.csv",  # metadata file from migration part of analysis
+              qtl.end.fall.mig=0.95, 
+              qtl.start.spring.mig=0.05,
               out_fldr="C:/Users/jmerkle/Desktop/Mapp2/tab6output/sequencesW",
               out_proj="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")   #name a projection you want the output to be in. Then carry this proj through the rest of the steps
 
