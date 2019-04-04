@@ -7,7 +7,7 @@ create.corridors.stopovers <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Map
                                        pop_BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/Footprints_pop",
                                        out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/final_products",
                                        stopover_percent=10, corridor_percents=c(10, 20),min_area = 20000,
-                                       simplify = TRUE, tolerance = 100, # unites are meters
+                                       simplify = TRUE, tolerance = 50, # unites are meters
                                        proj_of_ascs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"){
   
   #manage packages
@@ -70,8 +70,8 @@ create.corridors.stopovers <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Map
   thresholdQuantiles_names <- c(1,2,corridor_percents)
   
   print(paste0("GRIDCODEs of ", paste(thresholdQuantiles_names,collapse = ", "), 
-               " represent the following ranges of individuals: ", 
-               paste(floor(thresholdQuantiles*numb_ids),collapse=" - "),"."))
+               " represent the following ranges of individuals: 0 - ", 
+               paste(floor(thresholdQuantiles*numb_ids)+1,collapse=" - "),"."))
   
   # compute the contours
   classifiedRaster = cut(popFootprint,breaks=thresholdQuantiles)
@@ -171,6 +171,9 @@ create.corridors.stopovers <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Map
   # create the spatial data frame with a projection (same as above)
   bigData = SpatialPolygonsDataFrame(SpatialPolygons(bigData.sp),bigData.df)
   proj4string(bigData) <- proj_of_ascs
+  
+  bigData <- aggregate(bigData, "GRIDCODE")   #dissolve the polygons based on the gridcode
+  
   # write to a shapefile
   writeOGR(bigData,out_fldr,"corridors", driver="ESRI Shapefile")
   print(paste0("The area of your stopovers is ", round(stopoverarea,1), " square KM."))

@@ -34,12 +34,12 @@ create.BBs(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/sequences",   
                   proj_of_dbfs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
 
 #Step 3. Calculate average BBs for each individual and and a population UD and population footprint.
+
 create.BB.avgs(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDs",    #this is the folder where all the UDs are saved.
                pop_BBs_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDs_pop",  #it will make this folder for you
                pop_footprint_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/Footprints_pop",  #it will make this folder for you
                contour=99,
                proj_of_ascs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
-
 
 # Step 4. Calculate the stopover files and the low, medium, high use corridors as shapefiles
 create.corridors.stopovers(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDs_pop/averageUD.asc",
