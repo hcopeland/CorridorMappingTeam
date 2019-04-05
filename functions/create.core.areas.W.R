@@ -5,7 +5,7 @@
 create.core.areas.W <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/UDs_popW/averageUD_winter.asc",
                                        out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/final_productsW",
                                        core_contours=c(10,20,30,40,50,60,70,80,90,99), min_area = 20000,
-                                       simplify = TRUE, tolerance = 100, # unites are meters
+                                       simplify = TRUE, tolerance = 25, # unites are meters
                                        proj_of_ascs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"){
   
   #manage packages

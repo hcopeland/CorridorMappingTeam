@@ -7,7 +7,7 @@ create.corridors.stopovers <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Map
                                        pop_BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/Footprints_pop",
                                        out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/final_products",
                                        stopover_percent=10, corridor_percents=c(10, 20),min_area = 20000,
-                                       simplify = TRUE, tolerance = 50, # unites are meters
+                                       simplify = TRUE, tolerance = 25, # unites are meters
                                        proj_of_ascs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"){
   
   #manage packages
