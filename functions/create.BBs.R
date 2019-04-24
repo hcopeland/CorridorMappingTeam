@@ -8,7 +8,7 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
                        BBs_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UD",
                        footprint_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/Footprint",
                        metadata_fldr="C:/Users/jmerkle/Desktop/Mapp2/tab6output",
-                       cores=11, location.error=20, cell.size=50, max.lag=8, contour=99,time.step=5,
+                       cores=11, location.error=20, cell.size=50, max.lag=8, contour=99,time.step=5,mult4buff=0.2,
                        proj_of_dbfs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"){
   
   #manage packages
@@ -57,7 +57,7 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
   coordinates(dsp) <- c("x","y")
   proj4string(dsp) <- proj_of_dbfs
   ext <- extent(dsp)
-  multiplyers <- c((ext[2]-ext[1])*0.2, (ext[4]-ext[3])*0.2)   # add about 20% around the edges of your extent (you can adjust this if necessary)
+  multiplyers <- c((ext[2]-ext[1])*mult4buff, (ext[4]-ext[3])*mult4buff)   # add about 20% around the edges of your extent (you can adjust this if necessary)
   ext <- extend(ext, multiplyers)
   grd <- raster(ext)
   res(grd) <- cell.size     
@@ -69,7 +69,7 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
   
   sfInit(parallel = T, cpus = cores)   #must change the cpus
   sfExport("d", "grd", "u", "max.lag", "location.error","contour",
-           "BBs_out_fldr","footprint_out_fldr","time.step")
+           "BBs_out_fldr","footprint_out_fldr","time.step","mult4buff")
   sfLibrary(BBMM)
   sfLibrary(raster)
   regBB <- do.call(rbind, sfClusterApplyLB(1:length(u), function(i){
@@ -80,7 +80,7 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
     
     #prepare only the cells to run BB over
     ext2 <- extent(temp)
-    multiplyers <- c((ext2[2]-ext2[1])*0.2, (ext2[4]-ext2[3])*0.2)   # add about 20% around the edges of your extent (you can adjust this if necessary)
+    multiplyers <- c((ext2[2]-ext2[1])*mult4buff, (ext2[4]-ext2[3])*mult4buff)   # add about mult4buff around the edges of your extent (you can adjust this if necessary)
     ext2 <- extend(ext2, multiplyers)
     cels <- cellsFromExtent(grd, ext2)
 

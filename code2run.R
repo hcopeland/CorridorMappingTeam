@@ -30,7 +30,7 @@ create.BBs(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/sequences",   
                   BBs_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDs",  #it will make this folder for you
                   footprint_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/Footprints",  #it will make this folder for you
                   metadata_fldr="C:/Users/jmerkle/Desktop/Mapp2/tab6output",
-                  cores=11, location.error=20, cell.size=50, max.lag=8, contour=99, time.step=5,
+                  cores=11, location.error=20, cell.size=50, max.lag=8, contour=99, time.step=5,mult4buff=0.2,
                   proj_of_dbfs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
 
 #Step 3. Calculate average BBs for each individual and and a population UD and population footprint.
@@ -80,7 +80,7 @@ create.BBs.W(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/sequencesW",
              BBs_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDsW",  #it will make this folder for you
              metadata_fldr="C:/Users/jmerkle/Desktop/Mapp2/tab6output",
              mindays=30,   #if an individual animal has less than this many days in a given sequence of winter data, it will be removed
-             cores=11, location.error=20, cell.size=50, max.lag=8, time.step=5,
+             cores=11, location.error=20, cell.size=50, max.lag=8, time.step=5,mult4buff=0.2,
              proj_of_dbfs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
 
 #Step 3. Calculate average BBs for each individual and and a population UD.
