@@ -149,13 +149,22 @@ create.core.areas.W <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/Elk_
   proj4string(bigData) <- proj_of_ascs
   
   bigData$GRIDCODE <- as.numeric(as.character(bigData$GRIDCODE))
+  bigData <- aggregate(bigData, "GRIDCODE")   #dissolve the polygons based on the gridcode
+  bigData <- bigData[order(bigData$GRIDCODE),]
   
   # write to a shapefile
   writeOGR(bigData,out_fldr,"winter_ranges", driver="ESRI Shapefile")
 
+  toreport <- data.frame(results="yes")
   grdcds <- unique(bigData$GRIDCODE)
   for(i in 1:length(grdcds)){
+    toreport$temp <- round(gArea(bigData[bigData$GRIDCODE >= grdcds[i],], byid = FALSE)/1000000,1)
+    names(toreport)[names(toreport)=="temp"] <- paste0("GRIDCODE_",grdcds[i],"_area")
     print(paste0("The area of GRIDCODE ", grdcds[i], " is ", round(gArea(bigData[bigData$GRIDCODE >= grdcds[i],], byid = FALSE)/1000000,1), " square KM."))
   }
+  
+  write.csv(toreport, file = paste0(out_fldr,"/output_areas_winter.csv"), row.names = FALSE)
+  
+  
   return("Success. Check your folders.")
 }

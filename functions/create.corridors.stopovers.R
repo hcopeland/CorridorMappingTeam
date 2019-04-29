@@ -60,7 +60,8 @@ create.corridors.stopovers <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Map
   # for the other corridors based on % of individuals collared
   numb_ids <- length(list.files(pop_BBs_fldr, pattern=".asc"))-1
   print(paste0("The number of IDs in your populatoin is ", numb_ids, "."))
-  print(paste0("The max value of your population footprint grid is ",max(values(popFootprint)),"."))
+  maxval <- max(values(popFootprint))
+  print(paste0("The max value of your population footprint grid is ",maxval,"."))
   
   popFootprint <- popFootprint/numb_ids
   
@@ -179,10 +180,16 @@ create.corridors.stopovers <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Map
   writeOGR(bigData,out_fldr,"corridors", driver="ESRI Shapefile")
   print(paste0("The area of your stopovers is ", round(stopoverarea,1), " square KM."))
   
+  toreport <- data.frame(numb_ids=numb_ids, max_value_footprint_grid=maxval, stopover_area=round(stopoverarea,1))
+  
   grdcds <- unique(bigData$GRIDCODE)
   for(i in 1:length(grdcds)){
+    toreport$temp <- round(gArea(bigData[bigData$GRIDCODE >= grdcds[i],], byid = FALSE)/1000000,1)
+    names(toreport)[names(toreport)=="temp"] <- paste0("GRIDCODE_",grdcds[i],"_area")
     print(paste0("The area of GRIDCODE ", grdcds[i], " is ", round(gArea(bigData[bigData$GRIDCODE >= grdcds[i],], byid = FALSE)/1000000,1), " square KM."))
   }
+  write.csv(toreport, file = paste0(out_fldr,"/output_areas.csv"), row.names = FALSE)
+   
   print("Success. Check your folders")
   return("Done.")
 }

@@ -76,6 +76,11 @@ create.seqs.W <- function(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6outpu
 
   print("Here are the winter range start and end dates by year. Average winter start and end dates were added where corresponding migration dates were missing.")
   print(dts)
+  
+  loca <- str_locate_all(mig.metadata.file,"/")
+  loca <- loca[[1]][nrow(loca[[1]]),1]
+  write.csv(dts, file=paste0(substr(mig.metadata.file,1,loca),"winter_dates.csv"), row.names = FALSE)
+  
   #change columns back to posix
   dts2 <- dts
   dts$wint.start <- as.POSIXct(strptime(paste(dts$wint.start," 00:00:01",sep=""), format = "%Y-%m-%d %H:%M:%S"), tz="GMT")

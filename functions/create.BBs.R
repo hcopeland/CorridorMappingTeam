@@ -12,14 +12,16 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
                        proj_of_dbfs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"){
   
   #manage packages
-  if(all(c("rgdal","foreign","stringr","BBMM","snowfall","raster") %in% installed.packages()[,1])==FALSE)
-    stop("You must install the following packages: rgdal, foreign, BBMM, snowfall, raster, and stringr")
+  if(all(c("rgdal","R.utils","fields","foreign","stringr","BBMM","snowfall","raster") %in% installed.packages()[,1])==FALSE)
+    stop("You must install the following packages: rgdal, foreign, R.utils, BBMM, snowfall,fields, raster, and stringr")
   require(rgdal)
   require(foreign)
   require(stringr)
   require(BBMM)
   require(raster)
   require(snowfall)
+  require(R.utils)
+  require(fields)
   
   #check the new directories
   if(dir.exists(BBs_out_fldr)==FALSE){
@@ -50,15 +52,31 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
   if(all(c("date","x","y") %in% names(d)) == FALSE) 
     stop("There is an issue with the columns in your sequences. See Error 2.")
   
+  # create migration distances
+  
+  u <- unique(d$mig)
+  
+  mig_dists <- do.call(rbind, lapply(1:length(u), function(i){
+    return(data.frame(mig=u[i], max_dist=max(rdist(d[d$mig==u[i],c("x","y")]))/1000))
+  }))
+  
+  head(mig_dists)
+  hist(mig_dists$max_dist)
+  mig_dists$mean_max_dist <- mean(mig_dists$max_dist)
+  mig_dists$sd_max_dist <- sd(mig_dists$max_dist)
+  mig_dists$min_max_dist <- min(mig_dists$max_dist)
+  mig_dists$max_max_dist <- max(mig_dists$max_dist)
+  write.csv(mig_dists, file=paste(metadata_fldr,"/migration_distance_info.csv",sep=""), row.names=FALSE)
+  
   d$date <- as.POSIXct(strptime(d$date,format = "%Y-%m-%d %H:%M:%S"), tz="GMT")  
   
   #Create a grid to calculate BBs over
   dsp <- d
   coordinates(dsp) <- c("x","y")
   proj4string(dsp) <- proj_of_dbfs
-  ext <- extent(dsp)
+  ext <- raster::extent(dsp)
   multiplyers <- c((ext[2]-ext[1])*mult4buff, (ext[4]-ext[3])*mult4buff)   # add about 20% around the edges of your extent (you can adjust this if necessary)
-  ext <- extend(ext, multiplyers)
+  ext <- raster::extend(ext, multiplyers)
   grd <- raster(ext)
   res(grd) <- cell.size     
   projection(grd) <- proj4string(dsp)
@@ -72,6 +90,7 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
            "BBs_out_fldr","footprint_out_fldr","time.step","mult4buff")
   sfLibrary(BBMM)
   sfLibrary(raster)
+  sfLibrary(R.utils)
   regBB <- do.call(rbind, sfClusterApplyLB(1:length(u), function(i){
     start.time <- Sys.time()
     
@@ -79,22 +98,26 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
     temp <- temp[order(temp$date),]
     
     #prepare only the cells to run BB over
-    ext2 <- extent(temp)
+    ext2 <- raster::extent(temp)
     multiplyers <- c((ext2[2]-ext2[1])*mult4buff, (ext2[4]-ext2[3])*mult4buff)   # add about mult4buff around the edges of your extent (you can adjust this if necessary)
-    ext2 <- extend(ext2, multiplyers)
+    ext2 <- raster::extend(ext2, multiplyers)
     cels <- cellsFromExtent(grd, ext2)
 
     # this is the function to calculate the regular BB
-    bb <- try(brownian.bridge(x=temp$x,
-                              y=temp$y,
-                              time.lag=diff(as.numeric(temp$date)/60),
-                              area.grid=coordinates(grd)[cels,],
-                              max.lag=max.lag*60,
-                              time.step=time.step,
-                              location.error=location.error), #this is the location error of your collars
-              silent=TRUE)    
+    bb <- R.utils::withTimeout({
+      try(BBMM::brownian.bridge(x=temp$x,
+                          y=temp$y,
+                          time.lag=diff(as.numeric(temp$date)/60),
+                          area.grid=coordinates(grd)[cels,],
+                          max.lag=max.lag*60,
+                          time.step=time.step,
+                          location.error=location.error), #this is the location error of your collars
+          silent=TRUE)
+    }, envir=environment(), timeout = 10800, onTimeout = "warning")
+    
+    
     #write out results to file too, so if there is an error you don't loose all your work!
-    if(class(bb)=="try-error"){
+    if(class(bb)=="try-error" | class(bb)== "character"){
       return(data.frame(input.file=u[i],
                         brownian.motion.variance=NA,
                         grid.size=NA,
@@ -105,7 +128,7 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
                         Start.Date=min(temp$date),
                         End.Date=max(temp$date),
                         num.days=length(unique(strftime(temp$date, format = "%j", tz = "GMT"))),
-                        errors=attr(bb, "condition")$message))    
+                        errors=ifelse(class(bb)=="try-error", attr(bb, "condition")$message, "Ran too long")))    
     }else{
       
       

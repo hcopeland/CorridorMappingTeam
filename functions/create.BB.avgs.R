@@ -38,7 +38,7 @@ create.BB.avgs <- function(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output
   
   for(i in 1:length(ids_unique)){
     if(i == round(length(ids_unique)/2,0))
-      print("Your are half done.")
+      print("Your are 1/4 done.")
     if(length(ids[ids == ids_unique[i]])==1){
       bb <- raster(paste(BBs_fldr, "/", fls[ids == ids_unique[i]], sep=""))   # when there is just 1 individual
       bbtemp <- list("Brownian motion variance" = 0, "x" = coordinates(bb)[,1], "y" = coordinates(bb)[,2], "probability" = values(bb))
@@ -72,7 +72,27 @@ create.BB.avgs <- function(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output
     cs <- slot(slot(m, "grid"), "cellsize") 
     slot(slot(m, "grid"), "cellsize") <- rep(mean(cs), 2) 
     write.asciigrid(m, paste(pop_BBs_out_fldr,"/",ids_unique[i],"_ASCII.asc",sep=""), attr=1)
-    
+
+  }
+  
+  #this is now for teh footprints (without removing the 99% prior to averaging individuals)
+  for(i in 1:length(ids_unique)){
+    if(i == round(length(ids_unique)/2,0))
+      print("Your are 3/4 done.")
+    if(length(ids[ids == ids_unique[i]])==1){
+      bb <- raster(paste(BBs_fldr, "/", fls[ids == ids_unique[i]], sep=""))   # when there is just 1 individual
+    }else{
+      fls2 <- fls[ids == ids_unique[i]]
+      bb <- raster(paste(BBs_fldr, "/", fls2[1], sep=""))
+      for(e in 2:length(fls2)){
+        bb2 <- raster(paste(BBs_fldr, "/", fls2[e], sep=""))
+        bb <- addLayer(bb, bb2)
+      }
+      if(nlayers(bb) != length(fls2))
+        stop("You have a problem. See error 1.")
+      bb <- mean(bb)
+      bb <- bb/sum(values(bb))   #verify that they add up to 1
+    }
     #99% contours
     bb <- list('Brownian motion variance'=0,x=coordinates(bb)[,1],y=coordinates(bb)[,2],probability=values(bb))
     contours <- bbmm.contour(bb, levels=contour, plot=F)
