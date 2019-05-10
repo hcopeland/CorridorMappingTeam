@@ -41,22 +41,31 @@ create.BB.avgs <- function(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output
       print("Your are 1/4 done.")
     if(length(ids[ids == ids_unique[i]])==1){
       bb <- raster(paste(BBs_fldr, "/", fls[ids == ids_unique[i]], sep=""))   # when there is just 1 individual
-      bbtemp <- list("Brownian motion variance" = 0, "x" = coordinates(bb)[,1], "y" = coordinates(bb)[,2], "probability" = values(bb))
-      qtl <- bbmm.contour(bbtemp, levels = contour, plot = FALSE)
-      bb <- reclassify(bb, rcl=matrix(c(-1,qtl$Z,0),2,3, byrow=T))
+      cutoff <- sort(values(bb), decreasing=TRUE)
+      vlscsum <- cumsum(cutoff)
+      cutoff <- cutoff[vlscsum > contour/100][1]
+      # bbtemp <- list("Brownian motion variance" = 0, "x" = coordinates(bb)[,1], "y" = coordinates(bb)[,2], "probability" = values(bb))
+      # qtl <- bbmm.contour(bbtemp, levels = contour, plot = FALSE)
+      bb <- reclassify(bb, rcl=matrix(c(-1,cutoff,0),2,3, byrow=T))
       bb <- bb/sum(values(bb))   #verify that they add up to 1
     }else{
       fls2 <- fls[ids == ids_unique[i]]
       bb <- raster(paste(BBs_fldr, "/", fls2[1], sep=""))
-      bbtemp <- list("Brownian motion variance" = 0, "x" = coordinates(bb)[,1], "y" = coordinates(bb)[,2], "probability" = values(bb))
-      qtl <- bbmm.contour(bbtemp, levels = contour, plot = FALSE)
-      bb <- reclassify(bb, rcl=matrix(c(-1,qtl$Z,0),2,3, byrow=T))
+      cutoff <- sort(values(bb), decreasing=TRUE)
+      vlscsum <- cumsum(cutoff)
+      cutoff <- cutoff[vlscsum > contour/100][1]
+      # bbtemp <- list("Brownian motion variance" = 0, "x" = coordinates(bb)[,1], "y" = coordinates(bb)[,2], "probability" = values(bb))
+      # qtl <- bbmm.contour(bbtemp, levels = contour, plot = FALSE)
+      bb <- reclassify(bb, rcl=matrix(c(-1,cutoff,0),2,3, byrow=T))
       bb <- bb/sum(values(bb))   #verify that they add up to 1
       for(e in 2:length(fls2)){
         bb2 <- raster(paste(BBs_fldr, "/", fls2[e], sep=""))
-        bbtemp <- list("Brownian motion variance" = 0, "x" = coordinates(bb2)[,1], "y" = coordinates(bb2)[,2], "probability" = values(bb2))
-        qtl <- bbmm.contour(bbtemp, levels = contour, plot = FALSE)
-        bb2 <- reclassify(bb2, rcl=matrix(c(-1,qtl$Z,0),2,3, byrow=T))
+        cutoff <- sort(values(bb2), decreasing=TRUE)
+        vlscsum <- cumsum(cutoff)
+        cutoff <- cutoff[vlscsum > contour/100][1]
+        # bbtemp <- list("Brownian motion variance" = 0, "x" = coordinates(bb2)[,1], "y" = coordinates(bb2)[,2], "probability" = values(bb2))
+        # qtl <- bbmm.contour(bbtemp, levels = contour, plot = FALSE)
+        bb2 <- reclassify(bb2, rcl=matrix(c(-1,cutoff,0),2,3, byrow=T))
         bb2 <- bb2/sum(values(bb2))   #verify that they add up to 1
         bb <- addLayer(bb, bb2)
       }
@@ -94,12 +103,15 @@ create.BB.avgs <- function(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output
       bb <- bb/sum(values(bb))   #verify that they add up to 1
     }
     #99% contours
-    bb <- list('Brownian motion variance'=0,x=coordinates(bb)[,1],y=coordinates(bb)[,2],probability=values(bb))
-    contours <- bbmm.contour(bb, levels=contour, plot=F)
+    cutoff <- sort(values(bb), decreasing=TRUE)
+    vlscsum <- cumsum(cutoff)
+    cutoff <- cutoff[vlscsum > contour/100][1]
+    # bb <- list('Brownian motion variance'=0,x=coordinates(bb)[,1],y=coordinates(bb)[,2],probability=values(bb))
+    # contours <- bbmm.contour(bb, levels=contour, plot=F)
     # Create data.frame indicating cells within the each contour and export as Ascii Grid
-    contour.99 <- data.frame(x = bb$x, y = bb$y, probability = bb$probability)
+    contour.99 <- data.frame(x = coordinates(bb)[,1], y = coordinates(bb)[,2], probability = values(bb))
     # contour.99 <- contour.99[contour.99$probability >= contours$Z[1],]
-    contour.99$in.out <- ifelse(contour.99$probability >= contours$Z[1], 1, 0)
+    contour.99$in.out <- ifelse(contour.99$probability >= cutoff, 1, 0)
     #write out footprint for individual
     m <- SpatialPixelsDataFrame(points = contour.99[c("x", "y")], data=contour.99)
     m <- as(m, "SpatialGridDataFrame")

@@ -32,7 +32,7 @@ create.BBs(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/sequences",   
            metadata_fldr="C:/Users/jmerkle/Desktop/Mapp2/tab6output",
            cores=11,    #this is the number of cores/threads you want to use for parrallel processing
            location.error=20,   #location error of your GPS data in meters
-           cell.size=500,    #this is the cell size of the raster you'd like to fit the BBs over (should be 50m)
+           cell.size=50,    #this is the cell size of the raster you'd like to fit the BBs over (should be 50m)
            max.lag=8,     #this is the maximum amoung of time (in hours) that you want to allow any two points to be connected to conduct BB
            contour=99,    # contour level used to create the footprints
            time.step=5,   # represents how often (in minutes) that BB integrates between sequential points
@@ -46,12 +46,13 @@ create.BB.avgs(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDs",    #t
                contour=99,  # contour level used to create the footprints
                proj_of_ascs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")  # this is the proj4string of your data. (should be carried through from previous functions)
 
+
 # Step 4. Calculate the stopover files and the low, medium, high use corridors as shapefiles
 create.corridors.stopovers(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDs_pop/averageUD.asc",   #this is the file path for the POPud ascii file
                            PopFootprint_asc = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/Footprints_pop/popFootprint.asc",  #this is the file path for the POfootprint ascii file
                            pop_BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/Footprints_pop",   #this is the pop BBs folder
                            out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/final_products",     #this is an empty folder where you want the results to be saved
-                           stopover_percent=10, #this is the contour level for stopovers
+                           stopover_percent=90, #this is the contour level for stopovers
                            corridor_percents=c(10, 20),  #the corridor percents that are provided (these are in addition to 1 or more, and 2 or more corridors)
                            min_area = 20000, #if there are polygons smaller than this (in squared meters), they will be removed
                            simplify = TRUE, #should polygons be simplified?
@@ -91,7 +92,7 @@ create.BBs.W(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/sequencesW",
              mindays=30,   #if an individual animal has less than this many days in a given sequence of winter data, it will be removed
              cores=11,    #this is the number of cores/threads you want to use for parrallel processing
              location.error=20,   #location error of your GPS data in meters
-             cell.size=500,    #this is the cell size of the raster you'd like to fit the BBs over (should be 50m)
+             cell.size=50,    #this is the cell size of the raster you'd like to fit the BBs over (should be 50m)
              max.lag=8,     #this is the maximum amoung of time (in hours) that you want to allow any two points to be connected to conduct BB
              time.step=5,   # represents how often (in minutes) that BB integrates between sequential points
              mult4buff=0.2, # proportion of space around your gps data that is used to create the grid
@@ -107,11 +108,24 @@ create.BB.avgs.W(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDsW",   
 # Step 4. Calculate the winter contours
 create.core.areas.W(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDs_popW/averageUD_winter.asc",   #this is the file path of the averageUD_winter.asc
                     out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/final_productsW",   #this is an empty folder where you want the final products to go
-                    core_contours=c(10,20,30,40,50,60,70,80,90,99),   # it will spit out polygons for each of these contours
+                    core_contours=c(1,10,20,30,40,50,60,70,80,90),   # it will spit out polygons for each of these contours (1 = the 99% contour of the UD; 90 = the 10% contour of the UD)
                     min_area = 20000, #if there are polygons smaller than this (in squared meters), they will be removed
                     simplify = TRUE, #should polygons be simplified?
                     tolerance = 25, # how to polygons are simplified (unites are meters)
                     proj_of_ascs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")    # this is the proj4string of your data. (should be carried through from previous functions)
 
 
+# These are Extra bits of code
 
+
+# Method for teh hack corridors (based solely on buffers around the lines)
+source("C:/Users/jmerkle/Documents/GitHub/CorridorMappingTeam/functions/hack.corridors.R")
+hack.corridors(lines_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/migration_lines",  #this is the folder where your migration lines shapefile is stored
+               lines_name = "migration_lines",   # This is the name of the migration lines shapefile (do not include .shp)
+               out_fldr="C:/Users/jmerkle/Desktop/Mapp2/tab6output/hack_corridors",   #an empty folder where you want the outputs to be stored
+               corridor_percents=c(10, 20),  #the corridor percents that are provided (these are in addition to 1 or more, and 2 or more corridors)
+               min_area = 20000, #if there are polygons smaller than this (in squared meters), they will be removed
+               simplify = TRUE, #should polygons be simplified?
+               tolerance = 25, # how to polygons are simplified (unites are meters)
+               buff=200, # how many meters do you want to buffer the lines?
+               cell.size=50) #this is the cell size of the output (should be 50m)

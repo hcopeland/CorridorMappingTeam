@@ -30,9 +30,13 @@ create.corridors.stopovers <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Map
   stopovers <- raster(PopUD_asc)
   projection(stopovers) <- proj_of_ascs
   
-  bb <- list("Brownian motion variance" = 0, "x" = coordinates(stopovers)[,1], "y" = coordinates(stopovers)[,2], "probability" = values(stopovers))
-  qtl <- bbmm.contour(bb, levels = stopover_percent, plot = FALSE)
-  stopovers <- reclassify(stopovers, rcl=matrix(c(-1,qtl$Z,NA,qtl$Z,Inf,1),2,3, byrow=T))
+  cutoff <- sort(values(stopovers), decreasing=TRUE)
+  vlscsum <- cumsum(cutoff)
+  cutoff <- cutoff[vlscsum > stopover_percent/100][1]
+
+  # bb <- list("Brownian motion variance" = 0, "x" = coordinates(stopovers)[,1], "y" = coordinates(stopovers)[,2], "probability" = values(stopovers))
+  # qtl <- bbmm.contour(bb, levels = stopover_percent, plot = FALSE)
+  stopovers <- reclassify(stopovers, rcl=matrix(c(-1,cutoff,NA,cutoff,Inf,1),2,3, byrow=T))
 
   #remove patches that are smaller than min_area
   clmps <- clump(stopovers)
