@@ -46,13 +46,12 @@ create.BB.avgs(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDs",    #t
                contour=99,  # contour level used to create the footprints
                proj_of_ascs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")  # this is the proj4string of your data. (should be carried through from previous functions)
 
-
 # Step 4. Calculate the stopover files and the low, medium, high use corridors as shapefiles
 create.corridors.stopovers(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDs_pop/averageUD.asc",   #this is the file path for the POPud ascii file
                            PopFootprint_asc = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/Footprints_pop/popFootprint.asc",  #this is the file path for the POfootprint ascii file
                            pop_BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/Footprints_pop",   #this is the pop BBs folder
                            out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/final_products",     #this is an empty folder where you want the results to be saved
-                           stopover_percent=90, #this is the contour level for stopovers
+                           stopover_percent=10, #this is the quantile of the UD values of which to call stopovers
                            corridor_percents=c(10, 20),  #the corridor percents that are provided (these are in addition to 1 or more, and 2 or more corridors)
                            min_area = 20000, #if there are polygons smaller than this (in squared meters), they will be removed
                            simplify = TRUE, #should polygons be simplified?
@@ -108,7 +107,7 @@ create.BB.avgs.W(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDsW",   
 # Step 4. Calculate the winter contours
 create.core.areas.W(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDs_popW/averageUD_winter.asc",   #this is the file path of the averageUD_winter.asc
                     out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/final_productsW",   #this is an empty folder where you want the final products to go
-                    core_contours=c(1,10,20,30,40,50,60,70,80,90),   # it will spit out polygons for each of these contours (1 = the 99% contour of the UD; 90 = the 10% contour of the UD)
+                    core_contours=c(10,20,30,40,50,60,70,80,90),   # it will spit out polygons for each of these contours (1 = the 99% contour of the UD; 90 = the 10% contour of the UD)
                     min_area = 20000, #if there are polygons smaller than this (in squared meters), they will be removed
                     simplify = TRUE, #should polygons be simplified?
                     tolerance = 25, # how to polygons are simplified (unites are meters)

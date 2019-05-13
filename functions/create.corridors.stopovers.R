@@ -11,7 +11,7 @@ create.corridors.stopovers <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Map
                                        proj_of_ascs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"){
   
   #manage packages
-  if(all(c("raster","BBMM","igraph","rgdal","rgeos","maptools") %in% installed.packages()[,1])==FALSE)
+  if(all(c("raster","BBMM","igraph","move","rgdal","rgeos","maptools") %in% installed.packages()[,1])==FALSE)
     stop("You must install the following packages: raster,igraph, rgeos, BBMM, maptools, and rgdal.")
   require(raster)
   require(BBMM)
@@ -19,6 +19,7 @@ create.corridors.stopovers <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Map
   require(igraph)
   require(rgeos)
   require(maptools)
+  require(move)
   
   #check the new directories
   if(dir.exists(out_fldr)==FALSE){
@@ -30,13 +31,10 @@ create.corridors.stopovers <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Map
   stopovers <- raster(PopUD_asc)
   projection(stopovers) <- proj_of_ascs
   
-  cutoff <- sort(values(stopovers), decreasing=TRUE)
-  vlscsum <- cumsum(cutoff)
-  cutoff <- cutoff[vlscsum > stopover_percent/100][1]
-
-  # bb <- list("Brownian motion variance" = 0, "x" = coordinates(stopovers)[,1], "y" = coordinates(stopovers)[,2], "probability" = values(stopovers))
-  # qtl <- bbmm.contour(bb, levels = stopover_percent, plot = FALSE)
-  stopovers <- reclassify(stopovers, rcl=matrix(c(-1,cutoff,NA,cutoff,Inf,1),2,3, byrow=T))
+  #identify the contour
+  popUDVol <- getVolumeUD(as(stopovers, Class = "DBBMM"))
+  qtl <- quantile(popUDVol[popUDVol != 1], probs = stopover_percent / 100)
+  stopovers <- reclassify(popUDVol, rcl=matrix(c(0, qtl, 1, qtl, Inf, NA),2,3, byrow=T))
 
   #remove patches that are smaller than min_area
   clmps <- clump(stopovers)

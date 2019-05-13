@@ -4,19 +4,20 @@
 
 create.core.areas.W <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/UDs_popW/averageUD_winter.asc",
                                        out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/Elk_BenchCorral_Tab6/final_productsW",
-                                       core_contours=c(10,20,30,40,50,60,70,80,90,99), min_area = 20000,
+                                       core_contours=c(10,20,30,40,50,60,70,80,90), min_area = 20000,
                                        simplify = TRUE, tolerance = 25, # unites are meters
                                        proj_of_ascs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"){
   
   #manage packages
-  if(all(c("raster","BBMM","igraph","rgdal","rgeos","maptools") %in% installed.packages()[,1])==FALSE)
-    stop("You must install the following packages: raster,igraph, rgeos, BBMM, maptools, and rgdal.")
+  if(all(c("raster","move","BBMM","igraph","rgdal","rgeos","maptools") %in% installed.packages()[,1])==FALSE)
+    stop("You must install the following packages: raster,igraph, move, rgeos, BBMM, maptools, and rgdal.")
   require(raster)
   require(BBMM)
   require(rgdal)
   require(igraph)
   require(rgeos)
   require(maptools)
+  require(move)
   
   #check the new directories
   if(dir.exists(out_fldr)==FALSE){
@@ -28,11 +29,12 @@ create.core.areas.W <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/Elk_
   wintUDs <- raster(PopUD_asc)
   projection(wintUDs) <- proj_of_ascs
   
-  bb <- list("Brownian motion variance" = 0, "x" = coordinates(wintUDs)[,1], "y" = coordinates(wintUDs)[,2], "probability" = values(wintUDs))
-  qtl <- bbmm.contour(bb, levels = core_contours, plot = FALSE)
-  
-  thresholdQuantiles = c(0, qtl$Z)  
-  thresholdQuantiles_names <- sub("%","",qtl$Contour)
+  #identify the contour
+  popUDVol <- getVolumeUD(as(wintUDs, Class = "DBBMM"))
+  qtl <- quantile(popUDVol[popUDVol != 1], probs = core_contours/100)
+
+  thresholdQuantiles = as.numeric(c(0, qtl))  
+  thresholdQuantiles_names <- core_contours
   
   if(length(thresholdQuantiles)!= length(unique(thresholdQuantiles))){
     thresholdQuantiles_names <- thresholdQuantiles_names[duplicated(thresholdQuantiles)[2:length(thresholdQuantiles)]==FALSE]
@@ -40,8 +42,7 @@ create.core.areas.W <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/Elk_
   }
   
   # compute the contours
-  classifiedRaster = cut(wintUDs,breaks=thresholdQuantiles)
-  
+  classifiedRaster = cut(popUDVol,breaks=thresholdQuantiles)
   
   #remove patches that are smaller than min_area
   clmps <- clump(classifiedRaster)
@@ -150,7 +151,7 @@ create.core.areas.W <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/Elk_
   
   bigData$GRIDCODE <- as.numeric(as.character(bigData$GRIDCODE))
   bigData <- aggregate(bigData, "GRIDCODE")   #dissolve the polygons based on the gridcode
-  bigData <- bigData[order(bigData$GRIDCODE),]
+  bigData <- bigData[order(bigData$GRIDCODE, decreasing = FALSE),]
   
   # write to a shapefile
   writeOGR(bigData,out_fldr,"winter_ranges", driver="ESRI Shapefile")
@@ -158,13 +159,12 @@ create.core.areas.W <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/Elk_
   toreport <- data.frame(results="yes")
   grdcds <- unique(bigData$GRIDCODE)
   for(i in 1:length(grdcds)){
-    toreport$temp <- round(gArea(bigData[bigData$GRIDCODE >= grdcds[i],], byid = FALSE)/1000000,1)
+    toreport$temp <- round(gArea(bigData[bigData$GRIDCODE <= grdcds[i],], byid = FALSE)/1000000,1)
     names(toreport)[names(toreport)=="temp"] <- paste0("GRIDCODE_",grdcds[i],"_area")
-    print(paste0("The area of GRIDCODE ", grdcds[i], " is ", round(gArea(bigData[bigData$GRIDCODE >= grdcds[i],], byid = FALSE)/1000000,1), " square KM."))
+    print(paste0("The area of GRIDCODE ", grdcds[i], " is ", round(gArea(bigData[bigData$GRIDCODE <= grdcds[i],], byid = FALSE)/1000000,1), " square KM."))
   }
   
   write.csv(toreport, file = paste0(out_fldr,"/output_areas_winter.csv"), row.names = FALSE)
-  
   
   return("Success. Check your folders.")
 }
