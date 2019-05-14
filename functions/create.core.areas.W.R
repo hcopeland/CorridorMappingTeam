@@ -150,8 +150,8 @@ create.core.areas.W <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/Elk_
   proj4string(bigData) <- proj_of_ascs
   
   bigData$GRIDCODE <- as.numeric(as.character(bigData$GRIDCODE))
-  bigData <- aggregate(bigData, "GRIDCODE")   #dissolve the polygons based on the gridcode
-  bigData <- bigData[order(bigData$GRIDCODE, decreasing = FALSE),]
+  # bigData <- aggregate(bigData, "GRIDCODE")   #dissolve the polygons based on the gridcode
+  # bigData <- bigData[order(bigData$GRIDCODE, decreasing = FALSE),]
   
   # write to a shapefile
   writeOGR(bigData,out_fldr,"winter_ranges", driver="ESRI Shapefile")

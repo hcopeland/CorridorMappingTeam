@@ -175,8 +175,8 @@ create.corridors.stopovers <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Map
   bigData = SpatialPolygonsDataFrame(SpatialPolygons(bigData.sp),bigData.df)
   proj4string(bigData) <- proj_of_ascs
   
-  bigData <- aggregate(bigData, "GRIDCODE")   #dissolve the polygons based on the gridcode
-  bigData <- bigData[order(bigData$GRIDCODE),]
+  # bigData <- aggregate(bigData, "GRIDCODE")   #dissolve the polygons based on the gridcode
+  # bigData <- bigData[order(bigData$GRIDCODE),]
   
   # write to a shapefile
   writeOGR(bigData,out_fldr,"corridors", driver="ESRI Shapefile")
