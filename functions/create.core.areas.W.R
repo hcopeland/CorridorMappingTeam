@@ -164,9 +164,9 @@ create.core.areas.W <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/Elk_
   toreport <- data.frame(results="yes")
   grdcds <- unique(bigData$GRIDCODE)
   for(i in 1:length(grdcds)){
-    toreport$temp <- round(gArea(bigData[bigData$GRIDCODE <= grdcds[i],], byid = FALSE)/1000000,1)
+    toreport$temp <- round(gArea(bigData[bigData$GRIDCODE == grdcds[i],], byid = FALSE)/1000000,1)
     names(toreport)[names(toreport)=="temp"] <- paste0("GRIDCODE_",grdcds[i],"_area")
-    print(paste0("The area of GRIDCODE ", grdcds[i], " is ", round(gArea(bigData[bigData$GRIDCODE <= grdcds[i],], byid = FALSE)/1000000,1), " square KM."))
+    print(paste0("The area of GRIDCODE ", grdcds[i], " is ", round(gArea(bigData[bigData$GRIDCODE == grdcds[i],], byid = FALSE)/1000000,1), " square KM."))
   }
   
   write.csv(toreport, file = paste0(out_fldr,"/output_areas_winter.csv"), row.names = FALSE)

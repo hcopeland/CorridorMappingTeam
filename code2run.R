@@ -107,7 +107,7 @@ create.BB.avgs.W(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDsW",   
 # Step 4. Calculate the winter contours
 create.core.areas.W(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDs_popW/averageUD_winter.asc",   #this is the file path of the averageUD_winter.asc
                     out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/final_productsW",   #this is an empty folder where you want the final products to go
-                    core_contours=c(.01,0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,0.99,1),   # You must include a 1. Function ill spit out polygons for each of these contours (1 = the top 1% of the values/area; 99 = the top 99% of the values/area)
+                    core_contours=c(.01,0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,0.99,1),   # You must include a 1. Function will spit out polygons for each of these contours (0.01 = the top 1% of the values/area; 0.99 = the top 99% of the values/area)
                     min_area = 20000, #if there are polygons smaller than this (in squared meters), they will be removed
                     simplify = TRUE, #should polygons be simplified?
                     tolerance = 25, # how to polygons are simplified (unites are meters)
