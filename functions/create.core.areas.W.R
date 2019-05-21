@@ -26,35 +26,45 @@ create.core.areas.W <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/Elk_
   if(length(dir(out_fldr))> 0)
     stop("Your out_fldr Has something in it. It should be empty!")
   
-  wintUDs <- raster(PopUD_asc)
-  projection(wintUDs) <- proj_of_ascs
+  #these are the functions needed:
   
-  #identify the contour
-  popUDVol <- getVolumeUD(as(wintUDs, Class = "DBBMM"))
-  qtl <- quantile(popUDVol[popUDVol != 1], probs = core_contours/100)
-
-  thresholdQuantiles = as.numeric(c(0, qtl))  
-  thresholdQuantiles_names <- core_contours
-  
-  if(length(thresholdQuantiles)!= length(unique(thresholdQuantiles))){
-    thresholdQuantiles_names <- thresholdQuantiles_names[duplicated(thresholdQuantiles)[2:length(thresholdQuantiles)]==FALSE]
-    thresholdQuantiles <- thresholdQuantiles[duplicated(thresholdQuantiles)==FALSE]
+  # NOTE: The simplification is set to preserve topology; although not 
+  # strictly necessary for visualizaiton, this avoids the scenario where
+  # large polygons were mysteriously getting excluded from the output.
+  processPolygons<-function(){
+    # each polygon contains only the area within a single cut
+    # join the polygons with any in higher cuts (cumulative area for each level)
+    n=length(polygonList@polygons)
+    
+    
+    polygonList.acc <<- lapply(1:n, 
+                               function(x){
+                                 ##################################
+                                 # --- Updated January 2016
+                                 # accommodate the layers being out of order
+                                 idList = rep(NA_integer_,n)
+                                 idList[which(polygonList@data$layer>=x)]=1
+                                 #print(idList)
+                                 #print(polygonList@data$layer[which(idList==1)])
+                                 
+                                 unionSpatialPolygons(
+                                   SpatialPolygons(polygonList@polygons),idList)
+                               })
+    
+    # line simplification
+    if(simplify){
+      polygonList.acc <<- lapply(polygonList.acc,thinnedSpatialPoly,
+                                 tolerance,topologyPreserve=T)
+    }
+    
+    # split up multi-polygons into separate polygons
+    uniqueID<<-0 # reset before calling makeIndividual polygons
+    
+    spDataFrame.list <<- sapply(1:length(polygonList.acc),
+                                function(x) makeIndividualPolygons(
+                                  polygonList.acc[[x]]@polygons[[1]],core_contours[x],min_area))
+    #sapply((sapply(spDataFrame.list,function(x) sapply(x@polygons,function(y) sapply(y@Polygons, function(z) z@hole)))),sum)
   }
-  
-  # compute the contours
-  classifiedRaster = cut(popUDVol,breaks=thresholdQuantiles)
-  
-  #remove patches that are smaller than min_area
-  clmps <- clump(classifiedRaster)
-  clmpvals <- na.omit(values(clmps))
-  clmpvals <- data.frame(table(clmpvals))
-  clmpvals$Freq <- clmpvals$Freq*res(classifiedRaster)[1]*res(classifiedRaster)[2]   #this turns Freq into actuall m^2
-  clmpvals <- as.numeric(as.character(clmpvals$clmpvals)[clmpvals$Freq < min_area])
-  clmps[is.na(values(clmps))==TRUE] <- -5
-  classifiedRaster[values(classifiedRaster) %in% clmpvals == TRUE] <- NA
-  
-  # extract the contours as polygons
-  polygonList = rasterToPolygons(classifiedRaster,dissolve=T)
   
   # Methods - Data Munging -------------------------------------------
   # reads and updates the uniqueID global variable to assign 
@@ -97,10 +107,11 @@ create.core.areas.W <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/Elk_
     #sapply(polygon.list.wrap[[2]]@Polygons,function(x) x@hole)
     #print(sapply(1:length(index), function(x) sapply(polygon.list.wrap[[x]]@Polygons, function(y) y@hole=isHole[x])))
     
-    attrTable = data.frame(ID=id, GRIDCODE=attr)
+    attrTable = data.frame(GRIDCODE=attr,area=diffArea)
     row.names(attrTable) = id
     
-    x=SpatialPolygonsDataFrame(SpatialPolygons(polygon.list.wrap), data=attrTable)
+    x=SpatialPolygonsDataFrame(SpatialPolygons(polygon.list.wrap), 
+                               data=attrTable)
     
     #print(length(sapply(sapply(x@polygons,function(y) sapply(y@Polygons, function(z) z@hole)),sum)))
     #print(sum(sapply(sapply(x@polygons,function(y) sapply(y@Polygons, function(z) z@hole)),sum)))
@@ -108,37 +119,29 @@ create.core.areas.W <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/Elk_
   }
   
   
+  # OK, now bring in the popUD_asc for teh winter
+  wintUDs <- raster(PopUD_asc)
+  projection(wintUDs) <- proj_of_ascs
+  # wintUDs[wintUDs == 0] <- NA
   
-  # NOTE: The simplification is set to preserve topology; although not 
-  # strictly necessary for visualizaiton, this avoids the scenario where
-  # large polygons were mysteriously getting excluded from the output.
-  # each polygon contains only the area within a single cut
-  # join the polygons with any in higher cuts (cumulative area for each level)
-  n=length(polygonList@polygons)
+  #identify the contour
+  breakValues <- raster::quantile(wintUDs[wintUDs != 0], probs = core_contours)
+  #*** FLIP 'thresholdQuantiles' SO THE POLYGONS PERTAIN TO THE AREA HS EXPECTS - STARTING AT 2ND ELEMENT AS CODE APPEARS TO DISMISS LAST ELEMENT
+  core_contours <- core_contours[(length(core_contours) - 1):1]
   
-  polygonList.acc <- lapply(1:n, function(x){
-    idList = c(rep(NA,x-1),rep(1,n-x+1))
-    #print(idList)
-    unionSpatialPolygons(SpatialPolygons(polygonList@polygons),idList)
-  })
+  # compute the contours
+  classifiedRaster = cut(wintUDs,breaks=breakValues)
   
-  # line simplification
-  if(simplify==TRUE){
-    polygonList.acc <- lapply(polygonList.acc,thinnedSpatialPoly,
-                              tolerance,topologyPreserve=T)
-  }
+  # extract the contours as polygons
+  polygonList = rasterToPolygons(classifiedRaster,dissolve=T)
   
-  # split up multi-polygons into separate polygons
-  uniqueID<-0 # reset before calling makeIndividual polygons
-  spDataFrame.list <- sapply(1:length(polygonList.acc),function(x) makeIndividualPolygons(
-    polygonList.acc[[x]]@polygons[[1]],thresholdQuantiles_names[x],min_area))
-  #sapply((sapply(spDataFrame.list,function(x) sapply(x@polygons,function(y) sapply(y@Polygons, function(z) z@hole)))),sum)
+  # transform the multipolygons into simplified individual polygons
+  # accounting for the holes and filtering as needed
+  processPolygons()
   
-  for(x in 1:length(spDataFrame.list)){
-    proj4string(spDataFrame.list[[x]])<-proj_of_ascs
-  }
-  
-  bigData.df = data.frame(ID=numeric(), GRIDCODE=numeric())
+  # write all of the output to a single shapefile
+  # variables to hold the accumulated data
+  bigData.df = data.frame(contour=numeric(),area=numeric())
   bigData.sp = list()
   # accumulate the data
   for(i in 1:length(spDataFrame.list)){
@@ -149,7 +152,9 @@ create.core.areas.W <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Mapp2/Elk_
   bigData = SpatialPolygonsDataFrame(SpatialPolygons(bigData.sp),bigData.df)
   proj4string(bigData) <- proj_of_ascs
   
-  bigData$GRIDCODE <- as.numeric(as.character(bigData$GRIDCODE))
+  bigData$area <- NULL   #remove the area column
+
+  # bigData$GRIDCODE <- as.numeric(as.character(bigData$GRIDCODE))
   # bigData <- aggregate(bigData, "GRIDCODE")   #dissolve the polygons based on the gridcode
   # bigData <- bigData[order(bigData$GRIDCODE, decreasing = FALSE),]
   
