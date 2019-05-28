@@ -47,6 +47,7 @@ create.corridors.stopovers <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Map
   
   #convert final raster to polygons
   stopovers <- rasterToPolygons(stopovers, dissolve=TRUE)
+  stopovers <- stopovers[stopovers$layer == 1,]   #there were some issues with what seems to be orphaned holes (or similar) when layer == 0. So, we only keep polygons when layer == 1
   stopoverarea <- gArea(stopovers)/1000000
   if(simplify==TRUE){
     stopovers<- thinnedSpatialPoly(stopovers, tolerance = tolerance, topologyPreserve=TRUE)
