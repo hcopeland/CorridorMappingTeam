@@ -30,6 +30,7 @@ create.corridors.stopovers <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Map
   
   stopovers <- raster(PopUD_asc)
   projection(stopovers) <- proj_of_ascs
+  names(stopovers) <- "layer"
   
   #identify the contour
   popUDVol <- getVolumeUD(as(stopovers, Class = "DBBMM"))
