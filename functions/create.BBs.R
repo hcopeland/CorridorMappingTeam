@@ -8,6 +8,7 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
                        BBs_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UD",
                        footprint_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/Footprint",
                        metadata_fldr="C:/Users/jmerkle/Desktop/Mapp2/tab6output",
+                       BMvar=NULL, # if Null, will run regular BB and calculate motion variance. If a number is specified, it will invoke the Forced motion variance method
                        cores=11, location.error=20, cell.size=50, max.lag=8, contour=99,time.step=5,mult4buff=0.2,
                        proj_of_dbfs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"){
   
@@ -39,6 +40,84 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
   }
   
   print(paste0("Start time: ", Sys.time()))
+  
+  #make the custom brownian bridge function... FOR FMV
+  BrownianBridgeCustom<-function (x, y, time.lag, location.error, area.grid = NULL, cell.size = NULL, 
+                                  time.step = 10, max.lag = NULL, BMvar=BMvar) 
+  {
+    if (is.null(x) | is.null(y) | (length(x) != length(y))) {
+      stop("data is missing or unequal number of x and y coordinates")
+    }
+    if (is.null(location.error)) 
+      stop("must specify 'location.error'")
+    if (is.null(area.grid) & is.null(cell.size)) {
+      stop("'area.grid' or 'cell.size' must be specified")
+    }
+    if (!is.null(area.grid) & is.null(cell.size)) {
+      cell.size <- abs(area.grid[1, 1] - area.grid[2, 1])
+    }
+    if (is.null(area.grid) & !is.null(cell.size)) {
+      range.x <- range(x)
+      range.y <- range(y)
+      min.grid.x <- round(range.x[1] - 1 * sd(x))
+      max.grid.x <- round(range.x[2] + 1 * sd(x))
+      min.grid.y <- round(range.y[1] - 1 * sd(y))
+      max.grid.y <- round(range.y[2] + 1 * sd(y))
+      x. <- seq(min.grid.x, max.grid.x, cell.size)
+      y. <- seq(min.grid.y, max.grid.y, cell.size)
+      area.grid <- merge(x., y.)
+    }
+    if (is.null(max.lag)) {
+      max.lag = max(time.lag) + 1
+    }
+    if (length(location.error) == 1) {
+      location.error <- rep(location.error, length(x))
+    }
+    n.locs <- length(x)
+    # BMvar <- brownian.motion.variance(n.locs, time.lag, location.error, 
+    #                                   x, y, max.lag)
+    BMvar <- rep(BMvar, times = length(x))
+    if (is.null(time.step)) 
+      time.step <- 10
+    grid.size <- nrow(area.grid)
+    probability <- rep(0, grid.size)
+    T.Total <- sum(time.lag)
+    bbmm <- vector("list", 4)
+    names(bbmm) <- c("Brownian motion variance", "x", "y", "probability")
+    class(bbmm) <- "bbmm"
+    probability <- NULL
+    int <- 0
+    for (i in 1:(n.locs - 1)) {
+      if (time.lag[i] <= max.lag) {
+        theta <- NULL
+        tm <- 0
+        while (tm <= time.lag[i]) {
+          alpha <- tm/time.lag[i]
+          mu.x <- x[i] + alpha * (x[i + 1] - x[i])
+          mu.y <- y[i] + alpha * (y[i + 1] - y[i])
+          sigma.2 <- time.lag[i] * alpha * (1 - alpha) * 
+            BMvar[i] + ((1 - alpha)^2) * (location.error[i]^2) + 
+            (alpha^2) * (location.error[i + 1]^2)
+          ZTZ <- (area.grid[, 1] - mu.x)^2 + (area.grid[, 
+                                                        2] - mu.y)^2
+          theta <- (1/(2 * pi * sigma.2)) * exp(-ZTZ/(2 * 
+                                                        sigma.2))
+          int <- int + theta
+          tm <- tm + time.step
+        }
+      }
+    }
+    probability <- int/T.Total
+    probability <- probability/sum(probability)
+    bbmm[[4]] <- probability
+    bbmm[[1]] <- BMvar[1]
+    bbmm[[2]] <- area.grid[, 1]
+    bbmm[[3]] <- area.grid[, 2]
+    return(bbmm)
+  }
+  #----------- END OF CUSTOM BB FUNCTION (for FMV)
+  
+  
   
   #load up teh data into a single database
   fls <- dir(seqs_fldr)
@@ -86,7 +165,7 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
   u <- unique(d$mig)
   
   sfInit(parallel = T, cpus = cores)   #must change the cpus
-  sfExport("d", "grd", "u", "max.lag", "location.error","contour",
+  sfExport("d", "grd", "u", "max.lag", "location.error","contour","BMvar","BrownianBridgeCustom",
            "BBs_out_fldr","footprint_out_fldr","time.step","mult4buff")
   sfLibrary(BBMM)
   sfLibrary(raster)
@@ -104,20 +183,34 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
     cels <- cellsFromExtent(grd, ext2)
 
     # this is the function to calculate the regular BB
-    bb <- R.utils::withTimeout({
-      try(BBMM::brownian.bridge(x=temp$x,
-                          y=temp$y,
-                          time.lag=diff(as.numeric(temp$date)/60),
-                          area.grid=coordinates(grd)[cels,],
-                          max.lag=max.lag*60,
-                          time.step=time.step,
-                          location.error=location.error), #this is the location error of your collars
-          silent=TRUE)
-    }, envir=environment(), timeout = 10800, onTimeout = "warning")
     
+    if(class(BMvar)=="NULL"){
+      bb <- R.utils::withTimeout({
+        try(BBMM::brownian.bridge(x=temp$x,
+                                  y=temp$y,
+                                  time.lag=diff(as.numeric(temp$date)/60),
+                                  area.grid=coordinates(grd)[cels,],
+                                  max.lag=max.lag*60,
+                                  time.step=time.step,
+                                  location.error=location.error), #this is the location error of your collars
+            silent=TRUE)
+      }, envir=environment(), timeout = 10800, onTimeout = "warning")
+    }else{ #THIS IS FMV code
+      bb <- R.utils::withTimeout({
+        try(BrownianBridgeCustom(x=temp$x,
+                                  y=temp$y,
+                                  time.lag=diff(as.numeric(temp$date)/60),
+                                  area.grid=coordinates(grd)[cels,],
+                                  max.lag=max.lag*60,
+                                  time.step=time.step,
+                                  BMvar=BMvar,
+                                  location.error=location.error), #this is the location error of your collars
+            silent=TRUE)
+      }, envir=environment(), timeout = 10800, onTimeout = "warning")
+    }
     
     #write out results to file too, so if there is an error you don't loose all your work!
-    if(class(bb)=="try-error" | class(bb)== "character"){
+    if(class(bb)=="try-error" | class(bb)== "character" | length(bb$probability) == 1){
       return(data.frame(input.file=u[i],
                         brownian.motion.variance=NA,
                         grid.size=NA,
@@ -128,7 +221,7 @@ create.BBs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/se
                         Start.Date=min(temp$date),
                         End.Date=max(temp$date),
                         num.days=length(unique(strftime(temp$date, format = "%j", tz = "GMT"))),
-                        errors=ifelse(class(bb)=="try-error", attr(bb, "condition")$message, "Ran too long")))    
+                        errors=ifelse(class(bb)=="try-error", attr(bb, "condition")$message, "Ran too long or other problem")))    
     }else{
       
       
