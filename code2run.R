@@ -27,7 +27,6 @@ create.lns.file(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/sequences
 
 #step 2. Conduct BB analyses. You will want use parrallel processing for this one. 
 # This also spits out a metadata file of the results of the BB analysis
-
 create.BBs(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/sequences",    #this is the folder where all the sequences are saved
            BBs_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDs",  #it will make this folder for you
            footprint_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/Footprints",  #it will make this folder for you
@@ -38,7 +37,7 @@ create.BBs(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/sequences",   
            max.lag=8,     #this is the maximum amoung of time (in hours) that you want to allow any two points to be connected to conduct BB. You will want to make this larger if using FMV with 12 hr data!!!!
            contour=99,    # contour level used to create the footprints
            time.step=5,   # represents how often (in minutes) that BB integrates between sequential points
-           BMvar=1000, # if NULL, will run regular BB and calculate motion variance. If a number is specified, it will invoke the Forced motion variance method
+           BMvar=NULL, # if NULL, will run regular BB and calculate motion variance. If a number is specified, it will invoke the Forced motion variance method
            mult4buff=0.2, # proportion of space around your gps data that is used to create the grid
            proj_of_dbfs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")    # this is the proj4string of your data. (should be carried through from previous functions)
 
@@ -110,10 +109,10 @@ create.BBs.W(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/sequencesW",
              mindays=30,   #if an individual animal has less than this many days in a given sequence of winter data, it will be removed
              cores=11,    #this is the number of cores/threads you want to use for parrallel processing
              location.error=20,   #location error of your GPS data in meters
-             cell.size=1000,    #this is the cell size of the raster you'd like to fit the BBs over (should be 50m)
+             cell.size=50,    #this is the cell size of the raster you'd like to fit the BBs over (should be 50m)
              max.lag=8,     #this is the maximum amoung of time (in hours) that you want to allow any two points to be connected to conduct BB. You will want to make this larger if using FMV with 12 hr data!!!!
              time.step=5,   # represents how often (in minutes) that BB integrates between sequential points
-             BMvar=1000, # if Null, will run regular BB and calculate motion variance. If a number is specified, it will invoke the Forced motion variance method
+             BMvar=NULL, # if Null, will run regular BB and calculate motion variance. If a number is specified, it will invoke the Forced motion variance method
              mult4buff=0.2, # proportion of space around your gps data that is used to create the grid
              proj_of_dbfs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")    # this is the proj4string of your data. (should be carried through from previous functions)
 
