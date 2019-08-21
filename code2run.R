@@ -89,12 +89,26 @@ source("C:/Users/jmerkle/Documents/GitHub/CorridorMappingTeam/functions/create.B
 source("C:/Users/jmerkle/Documents/GitHub/CorridorMappingTeam/functions/create.BB.avgs.W.R")
 source("C:/Users/jmerkle/Documents/GitHub/CorridorMappingTeam/functions/create.core.areas.W.R")
 
+
+shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output" 
+shpfl_name= "pointsOut_20190207093941"
+idname="newUid"  #name of the column representing animal ID
+datename="nwMstrD"   #name of the column representing date in POSIX format
+mig.metadata.file="C:/Users/jmerkle/Desktop/Mapp2/tab6output/metadata.csv"  # metadata file from migration part of analysis
+use_same_annual_dates=TRUE #if TRUE, then will identify the same winter period for each year based on the qtl.end.fall.mig and qtl.start.spr.mig. If FALSE, winter is defined for each id-yr as the end of fall migration to start of spring migration
+qtl.end.fall.mig=0.95 #quantile of end of fall migration dates, which serve to start the winter period for each year
+qtl.start.spring.mig=0.05   #quantile of start of spring migration dates, which serve to end the winter period for each year
+out_fldr="C:/Users/jmerkle/Desktop/Mapp2/tab6output/sequencesW"   #this is where you want to sequences saved to
+out_proj="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"
+
+
 #step 1. Create winter sequences from the output of Migration Mapper (tab 6)
 create.seqs.W(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output", 
               shpfl_name= "pointsOut_20190207093941" ,
               idname="newUid",  #name of the column representing animal ID
               datename="nwMstrD",   #name of the column representing date in POSIX format
               mig.metadata.file="C:/Users/jmerkle/Desktop/Mapp2/tab6output/metadata.csv",  # metadata file from migration part of analysis
+              use_same_annual_dates=TRUE, #if TRUE, then will identify the same winter period for each year based on the qtl.end.fall.mig and qtl.start.spr.mig. If FALSE, winter is defined for each id-yr as the end of fall migration to start of spring migration
               qtl.end.fall.mig=0.95, #quantile of end of fall migration dates, which serve to start the winter period for each year
               qtl.start.spring.mig=0.05,   #quantile of start of spring migration dates, which serve to end the winter period for each year
               out_fldr="C:/Users/jmerkle/Desktop/Mapp2/tab6output/sequencesW",   #this is where you want to sequences saved to
