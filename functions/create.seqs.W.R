@@ -37,7 +37,7 @@ create.seqs.W <- function(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6outpu
   # fl$Start.Date <- as.POSIXct(strptime(paste0("2018", substr(fl$Start.Date,5,19)),format = "%Y-%m-%d %H:%M:%S"), tz="GMT")
   # fl$End.Date <- as.POSIXct(strptime(paste0("2018", substr(fl$End.Date,5,19)),format = "%Y-%m-%d %H:%M:%S"), tz="GMT")
   
-  if(use_same_annual_dates=TRUE){
+  if(use_same_annual_dates==TRUE){
     
     sp <- fl[fl$seas == "sp",]
     fa <- fl[fl$seas == "fa",]
