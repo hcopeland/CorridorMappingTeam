@@ -125,12 +125,14 @@ create.seqs.W <- function(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6outpu
         return(NULL)
       }
       tmp$winter <- dts$winter[i]
+      tmp$id_yr <- paste0(tmp$id,"_wi", substr(dts$winter[i],6,10))
+      
       #create a unique winter period ID (so the year of teh winter means the year at the end of the winter period)
-      if(as.numeric(substr(dts$wint.start[i],6,7)) <6){ #if you specified start of winter after 1 January, instead of in the previous year
-        tmp$id_yr <- paste0(tmp$id,"_wi", substr(tmp$year,3,4))
-      }else{
-        tmp$id_yr <- paste0(tmp$id,"_wi", substr(ifelse(tmp$month>6,tmp$year+1,tmp$year),3,4))
-      }
+      # if(as.numeric(substr(dts$wint.start[i],6,7)) <6){ #if you specified start of winter after 1 January, instead of in the previous year
+      #   tmp$id_yr <- paste0(tmp$id,"_wi", substr(tmp$year,3,4))
+      # }else{
+      #   tmp$id_yr <- paste0(tmp$id,"_wi", substr(ifelse(tmp$month>6,tmp$year+1,tmp$year),3,4))
+      # }
       
       return(tmp)
     })
