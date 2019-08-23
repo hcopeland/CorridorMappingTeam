@@ -42,7 +42,7 @@ create.seqs.W <- function(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6outpu
     sp <- fl[fl$seas == "sp",]
     fa <- fl[fl$seas == "fa",]
     
-    yr_rng <- unique(fl$yr)
+    yr_rng <- sort(unique(fl$yr))
     
     dts <- do.call(rbind, lapply(0:length(yr_rng), function(i){
       if(i == 0){
@@ -125,7 +125,7 @@ create.seqs.W <- function(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6outpu
         return(NULL)
       }
       tmp$winter <- dts$winter[i]
-      tmp$id_yr <- paste0(tmp$id,"_wi", substr(dts$winter[i],6,10))
+      tmp$id_yr <- paste0(tmp$id,"_wi", substr(dts$winter[i],8,10))
       
       #create a unique winter period ID (so the year of teh winter means the year at the end of the winter period)
       # if(as.numeric(substr(dts$wint.start[i],6,7)) <6){ #if you specified start of winter after 1 January, instead of in the previous year
@@ -156,18 +156,46 @@ create.seqs.W <- function(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6outpu
       names(tmp) <- c("id","date","x","y")   # rename columns
       write.dbf(tmp, file = paste0(out_fldr,"/",seqs[i],".dbf"))    #write as dbf
     }
+    return(dts2)
     
   }else{    #this section is for when you want to have start end dates of winter differ for each individual in each year based on their migration stasrt and stop dates
     
     fl$id <- str_split_fixed(fl$input.file, "_",2)[,1]
     
+    # read in the shapefile
+    print("Loading the shapefile (this can take a few minutes)...")
+    # d <- readOGR(shpfl_fldr, shpfl_name)
+    d <- st_read(shpfl_fldr, shpfl_name)   #use sf package
+    d <- as(d, "Spatial")
+    
+    print(paste0("Your shapefiles has ", nrow(d), " rows."))
+    if(all(c(idname,datename) %in% names(d)) == FALSE) 
+      stop("There is an issue with the columns in your sequences. See Error 1b.")
+    
+    #reproject to new projection, if necessary
+    proj <- proj4string(d)
+    if(proj != out_proj){    
+      d <- spTransform(d, CRS(out_proj))
+    }
+    
+    #reduce the dataset to columns of interest
+    d <- d[,c(idname,datename)]
+    names(d) <- c("id","date")
+    
+    #fix the dates  (it is OK to specify GMT, since all dates will be in GMT!)
+    d$date <- as.POSIXct(strptime(d$date,format = "%Y-%m-%d %H:%M:%S"), tz="GMT")
+    d$id <- as.character(d$id)
+    d$year <- as.numeric(strftime(d$date, format = "%Y", tz = "GMT"))
+    
+    if(any(is.na(d$date)))
+      stop("You have a problem with your date column! It does not seem to be a character that was previously in POSIX format.")
+    
     #build a database of the potential winter periods
     
-    ids <- unique(fl$id)
+    ids <- unique(d$id)
     dts <- do.call(rbind, lapply(1:length(ids), function(i){
       
-      tmp <- fl[fl$id == ids[i],]
-      yr_rng <- unique(tmp$yr)
+      yr_rng <- sort(unique(d$year[d$id == ids[i]]))
       
       tmp2 <- do.call(rbind, lapply(0:length(yr_rng), function(e){
         if(e == 0){
@@ -176,7 +204,7 @@ create.seqs.W <- function(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6outpu
             wint.end <- NA
           }
           return(data.frame(id=ids[i], wintr=paste(yr_rng[e+1]-1, yr_rng[e+1], sep="_"), 
-                            id_yr=paste(ids[i],yr_rng[e+1],sep="_"), wint.start=NA, 
+                            id_yr=paste(ids[i],substr(yr_rng[e+1],3,4),sep="_"), wint.start=NA, 
                             wint.end=as.character(wint.end-86400)))
         }else{
           if(e == length(yr_rng)){
@@ -185,7 +213,7 @@ create.seqs.W <- function(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6outpu
               wint.start <- NA
             }
             return(data.frame(id=ids[i], wintr=paste(yr_rng[e], yr_rng[e]+1, sep="_"), 
-                              id_yr=paste(ids[i],yr_rng[e]+1,sep="_"), 
+                              id_yr=paste(ids[i],substr(yr_rng[e]+1,3,4),sep="_"), 
                               wint.start=as.character(wint.start+86400), 
                               wint.end=NA))
           }else{
@@ -198,7 +226,7 @@ create.seqs.W <- function(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6outpu
               wint.start <- NA
             }
             return(data.frame(id=ids[i], wintr=paste(yr_rng[e], yr_rng[e+1], sep="_"), 
-                              id_yr=paste(ids[i],yr_rng[e+1],sep="_"), 
+                              id_yr=paste(ids[i],substr(yr_rng[e+1],3,4),sep="_"), 
                               wint.start=as.character(wint.start+86400), 
                               wint.end=as.character(wint.end-86400)))
           }
@@ -233,47 +261,29 @@ create.seqs.W <- function(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6outpu
     dts$wint.start <- as.POSIXct(strptime(dts$wint.start,format = "%Y-%m-%d %H:%M:%S"), tz="GMT")
     dts$wint.end <- as.POSIXct(strptime(dts$wint.end,format = "%Y-%m-%d %H:%M:%S"), tz="GMT")
     
-    # read in the shapefile
-    print("Loading the shapefile (this can take a few minutes)...")
-    # d <- readOGR(shpfl_fldr, shpfl_name)
-    d <- st_read(shpfl_fldr, shpfl_name)   #use sf package
-    d <- as(d, "Spatial")
-    
-    print(paste0("Your shapefiles has ", nrow(d), " rows."))
-    if(all(c(idname,datename) %in% names(d)) == FALSE) 
-      stop("There is an issue with the columns in your sequences. See Error 1b.")
-    
-    #reproject to new projection, if necessary
-    proj <- proj4string(d)
-    if(proj != out_proj){    
-      d <- spTransform(d, CRS(out_proj))
-    }
-    
-    #reduce the dataset to columns of interest
-    d <- d[,c(idname,datename)]
-    names(d) <- c("id","date")
-    
-    #fix the dates  (it is OK to specify GMT, since all dates will be in GMT!)
-    d$date <- as.POSIXct(strptime(d$date,format = "%Y-%m-%d %H:%M:%S"), tz="GMT")
-    
-    if(any(is.na(d$date)))
-      stop("You have a problem with your date column! It does not seem to be a character that was previously in POSIX format.")
     
     print("Identifying sequences...")
     # loop through the sequences
     
     d$id <- as.character(d$id)
     dts$id <- as.character(dts$id)
+    dts$numb_of_pts <- NA
     
     for(i in 1:nrow(dts)){
       tmp <- d[d$date >= dts$wint.start[i] & d$date <= dts$wint.end[i] & d$id == dts$id[i],]
       tmp <- cbind(as.data.frame(tmp)[,c("id","date")],coordinates(tmp))    # get it out of sp object
       tmp$date <- as.character(tmp$date)    #need to switch this back to character for dbf files
       names(tmp) <- c("id","date","x","y")   # rename columns
-      write.dbf(tmp, file = paste0(out_fldr,"/",seqs[i],".dbf"))    #write as dbf
+      dts$numb_of_pts[i] <- nrow(tmp)
+      if(nrow(tmp)>0){
+        write.dbf(tmp, file = paste0(out_fldr,"/",sub("_","_wi",dts$id_yr[i]),".dbf"))    #write as dbf
+      }else{
+        next
+      }
     }
+    return(dts)
   }
   
   print(paste0("Finished creating ",length(dir(out_fldr))," sequences. Check your sequences folder."))
-  return(dts2)
+
 }
