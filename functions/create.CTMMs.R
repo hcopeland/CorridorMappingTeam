@@ -53,8 +53,8 @@ create.CTMMs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/
     return(data.frame(mig=u[i], max_dist=max(rdist(d[d$mig==u[i],c("x","y")]))/1000))
   }))
   
-  head(mig_dists)
-  hist(mig_dists$max_dist)
+  # head(mig_dists)
+  # hist(mig_dists$max_dist)
   mig_dists$mean_max_dist <- mean(mig_dists$max_dist)
   mig_dists$sd_max_dist <- sd(mig_dists$max_dist)
   mig_dists$min_max_dist <- min(mig_dists$max_dist)
@@ -80,12 +80,12 @@ create.CTMMs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/
   dsp_proj$y <-  coordinates(dsp_proj)[,2]
   ext <- extent(dsp_proj)
   multiplyers <- c((ext[2]-ext[1])*mult4buff, (ext[4]-ext[3])*mult4buff)
-  ext <- extend(ext, multiplyers)   #this will be used inside the loop to extend each UD so it can be summed up
+  ext <- raster::extend(ext, multiplyers)   #this will be used inside the loop to extend each UD so it can be summed up
   
   u <- unique(d$mig)
   
   sfInit(parallel = T, cpus = cores)   #must change the cpus
-  sfExport("d", "ext", "u", "CTMMs_out_fldr","Information_Criteria")
+  sfExport("d", "ext", "u", "CTMMs_out_fldr", "Information_Criteria", "proj_of_dbfs", "cell.size")
   sfLibrary(ctmm)
   sfLibrary(raster)
   sfLibrary(R.utils)
@@ -96,12 +96,12 @@ create.CTMMs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/
 
     df <- d[d$mig == u[i],]
     
-    if(nrow(df) <4){   #throw out an NA line if there are less than 4 points.
-      return(data.frame(Animal_ID=u[i], model=NA, deltaLOOCV=NA, deltaMSPE=NA,
+    if(nrow(df) <5){   #throw out an NA line if there are less than 4 points.
+      return(data.frame(Animal_ID=u[i], model=NA, deltaIC=NA, deltaMSPE=NA,
                         DOF=NA, grid.size=NA, grid.cell.size=NA, date.created=Sys.time(),
                         execution_time=NA, Start.Date=min(df$date), End.Date=max(df$date),
                         num.days=length(unique(strftime(df$date, format = "%j", tz = "GMT"))),
-                        errors="Less than 4 points"))
+                        errors="Less than 4 points."))
       
     }else{
       df <- df[order(df$date), ]
@@ -123,11 +123,11 @@ create.CTMMs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/
       mod1 <- FITS[[1]]
       mod2 <- FITS[[2]]
       mod3 <- FITS[[3]]
-      LOOCV = c(mod1$LOOCV, mod2$LOOCV, mod3$LOOCV)
+      info = c(mod1[[Information_Criteria]], mod2[[Information_Criteria]], mod3[[Information_Criteria]])
       #AICc = c(mod1$AICc, mod2$AICc, mod3$AICc)
-      temp1 <- setDT(data.frame(summary(FITS[1:3], IC = "LOOCV", MSPE = "velocity")), 
+      temp1 <- setDT(data.frame(summary(FITS[1:3], IC = Information_Criteria, MSPE = "velocity")), 
                      keep.rownames = "model")
-      colnames(temp1) <- c("model", "deltaLOOCV", "deltaMSPE", "DOF")
+      colnames(temp1) <- c("model", "deltaIC", "deltaMSPE", "DOF")
       temp2 <- data.frame(Animal_ID = rep(u[i], nrow(temp1)))
       temp3 <- cbind(temp2, temp1)
       
@@ -161,7 +161,7 @@ create.CTMMs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/
       
       # rescale probabilities so they equal 1
       prt <- rkrig/cellStats(rkrig, sum)
-      rkrig2 <- extend(prt, ext, value = 0)
+      rkrig2 <- raster::extend(prt, ext, value = 0)
       
       # write out ascii file
       m <- as(rkrig2, "SpatialGridDataFrame")
@@ -181,7 +181,7 @@ create.CTMMs <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/
   }))
   sfStop()
   
-  write.csv(results, file=paste(metadata_fldr,"/metadata.csv",sep=""), row.names=FALSE)
+  write.csv(results, file=paste(metadata_fldr,"/metadata_migration_CTMM.csv",sep=""), row.names=FALSE)
   print(paste0("End time: ", Sys.time()))
   return("Done. Check your folders.")
 }#end function

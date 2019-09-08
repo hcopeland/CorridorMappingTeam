@@ -12,7 +12,7 @@ create.corridors.stopovers <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Map
   
   #manage packages
   if(all(c("raster","BBMM","igraph","move","rgdal","rgeos","maptools") %in% installed.packages()[,1])==FALSE)
-    stop("You must install the following packages: raster,igraph, rgeos, BBMM, maptools, and rgdal.")
+    stop("You must install the following packages: raster,igraph, move, rgeos, BBMM, maptools, and rgdal.")
   require(raster)
   require(BBMM)
   require(rgdal)

@@ -30,7 +30,9 @@ create.BB.avgs <- function(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output
   
   print(paste0("Start time: ", Sys.time()))
   
-  fls <- dir(BBs_fldr)
+  fls <- list.files(BBs_fldr, ".asc$")
+  if(length(fls)==0)
+    stop("You have no sequences with successful BBs.")
   print(paste("You have ", length(fls), " sequences with successful BBs.", sep=""))
   ids <- str_split_fixed(fls, "_",3)[,1]
   ids_unique <- unique(ids)
@@ -121,40 +123,62 @@ create.BB.avgs <- function(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output
   }
   
   #create overall averages
-  fls <- dir(pop_BBs_out_fldr)
-  bb <- raster(paste(pop_BBs_out_fldr, "/", fls[1], sep=""))
-  for(i in 2:length(fls)){
-    bb <- addLayer(bb, raster(paste(pop_BBs_out_fldr, "/", fls[i], sep="")))
+  fls <- list.files(pop_BBs_out_fldr, ".asc$")
+
+  if(length(fls)==1){
+    bb <- raster(paste(pop_BBs_out_fldr, "/", fls[1], sep=""))
+    m <- as(bb, "SpatialGridDataFrame")
+    cs <- slot(slot(m, "grid"), "cellsize") 
+    slot(slot(m, "grid"), "cellsize") <- rep(mean(cs), 2) 
+    write.asciigrid(m, paste(pop_BBs_out_fldr,"/","averageUD.asc",sep=""), attr=1)
+    projection(bb) <- proj_of_ascs
+    writeRaster(bb, filename = paste(pop_BBs_out_fldr,"/","averageUD.img",sep=""), format="HFA")
+    #create overall population footprint
+    fls <- list.files(pop_footprint_out_fldr, ".asc$")
+    bb <- raster(paste(pop_footprint_out_fldr, "/", fls[1], sep=""))
+    m <- as(bb, "SpatialGridDataFrame")
+    cs <- slot(slot(m, "grid"), "cellsize") 
+    slot(slot(m, "grid"), "cellsize") <- rep(mean(cs), 2) 
+    write.asciigrid(m, paste(pop_footprint_out_fldr,"/","popFootprint.asc",sep=""), attr=1)
+    projection(bb) <- proj_of_ascs
+    writeRaster(bb, filename = paste(pop_footprint_out_fldr,"/","popFootprint.img",sep=""), format="HFA")
+    print(paste0("End time: ", Sys.time()))
+    return("Done. Check your folders. Note you only had 1 ID so there is nothing to average.")
+  }else{  #if there is at least 1 individual
+    bb <- raster(paste(pop_BBs_out_fldr, "/", fls[1], sep=""))
+    for(i in 2:length(fls)){
+      bb <- addLayer(bb, raster(paste(pop_BBs_out_fldr, "/", fls[i], sep="")))
+    }
+    if(nlayers(bb) != length(fls))
+      stop("You have a problem. See error 3.")
+    bb <- mean(bb)
+    bb <- bb/sum(values(bb))   #verify that they add up to 1
+    #output averaged individual ASCII file
+    m <- as(bb, "SpatialGridDataFrame")
+    cs <- slot(slot(m, "grid"), "cellsize") 
+    slot(slot(m, "grid"), "cellsize") <- rep(mean(cs), 2) 
+    write.asciigrid(m, paste(pop_BBs_out_fldr,"/","averageUD.asc",sep=""), attr=1)
+    projection(bb) <- proj_of_ascs
+    writeRaster(bb, filename = paste(pop_BBs_out_fldr,"/","averageUD.img",sep=""), format="HFA")
+    
+    #create overall population footprint
+    fls <- list.files(pop_footprint_out_fldr, ".asc$")
+    bb <- raster(paste(pop_footprint_out_fldr, "/", fls[1], sep=""))
+    for(i in 2:length(fls)){
+      bb <- addLayer(bb, raster(paste(pop_footprint_out_fldr, "/", fls[i], sep="")))
+    }
+    if(nlayers(bb) != length(fls))
+      stop("You have a problem. See error 4.")
+    bb <- sum(bb)
+    #output averaged individual ASCII file
+    m <- as(bb, "SpatialGridDataFrame")
+    cs <- slot(slot(m, "grid"), "cellsize") 
+    slot(slot(m, "grid"), "cellsize") <- rep(mean(cs), 2) 
+    write.asciigrid(m, paste(pop_footprint_out_fldr,"/","popFootprint.asc",sep=""), attr=1)
+    projection(bb) <- proj_of_ascs
+    writeRaster(bb, filename = paste(pop_footprint_out_fldr,"/","popFootprint.img",sep=""), format="HFA")
+    print(paste0("End time: ", Sys.time()))
+    return("Done. Check your folders.") 
   }
-  if(nlayers(bb) != length(fls))
-    stop("You have a problem. See error 3.")
-  bb <- mean(bb)
-  bb <- bb/sum(values(bb))   #verify that they add up to 1
-  #output averaged individual ASCII file
-  m <- as(bb, "SpatialGridDataFrame")
-  cs <- slot(slot(m, "grid"), "cellsize") 
-  slot(slot(m, "grid"), "cellsize") <- rep(mean(cs), 2) 
-  write.asciigrid(m, paste(pop_BBs_out_fldr,"/","averageUD.asc",sep=""), attr=1)
-  projection(bb) <- proj_of_ascs
-  writeRaster(bb, filename = paste(pop_BBs_out_fldr,"/","averageUD.img",sep=""), format="HFA")
-  
-  #create overall population footprint
-  fls <- dir(pop_footprint_out_fldr)
-  bb <- raster(paste(pop_footprint_out_fldr, "/", fls[1], sep=""))
-  for(i in 2:length(fls)){
-    bb <- addLayer(bb, raster(paste(pop_footprint_out_fldr, "/", fls[i], sep="")))
-  }
-  if(nlayers(bb) != length(fls))
-    stop("You have a problem. See error 4.")
-  bb <- sum(bb)
-  #output averaged individual ASCII file
-  m <- as(bb, "SpatialGridDataFrame")
-  cs <- slot(slot(m, "grid"), "cellsize") 
-  slot(slot(m, "grid"), "cellsize") <- rep(mean(cs), 2) 
-  write.asciigrid(m, paste(pop_footprint_out_fldr,"/","popFootprint.asc",sep=""), attr=1)
-  projection(bb) <- proj_of_ascs
-  writeRaster(bb, filename = paste(pop_footprint_out_fldr,"/","popFootprint.img",sep=""), format="HFA")
-  print(paste0("End time: ", Sys.time()))
-  return("Done. Check your folders.")
 } #end of function
 

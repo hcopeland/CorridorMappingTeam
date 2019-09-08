@@ -4,12 +4,12 @@
 # written by Jerod Merkle, 24 Feb 2019 (but based on Hall Sawyer's code)
 
 create.BBs.W <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/sequencesW",
-                       BBs_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDsW",
-                       metadata_fldr="C:/Users/jmerkle/Desktop/Mapp2/tab6output",
-                       mindays=30,   #if an individual animal has less than this many days in a given year's winter data, it will be removed
-                       BMvar=NULL, # if Null, will run regular BB and calculate motion variance. If a number is specified, it will invoke the Forced motion variance method
-                       cores=11, location.error=20, cell.size=50, max.lag=8, time.step=5,mult4buff=0.2,
-                       proj_of_dbfs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"){
+                         BBs_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDsW",
+                         metadata_fldr="C:/Users/jmerkle/Desktop/Mapp2/tab6output",
+                         mindays=30,   #if an individual animal has less than this many days in a given year's winter data, it will be removed
+                         BMvar=NULL, # if Null, will run regular BB and calculate motion variance. If a number is specified, it will invoke the Forced motion variance method
+                         cores=11, location.error=20, cell.size=50, max.lag=8, time.step=5,mult4buff=0.2,
+                         proj_of_dbfs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"){
   
   #manage packages
   if(all(c("rgdal","foreign","R.utils","stringr","BBMM","snowfall","raster") %in% installed.packages()[,1])==FALSE)
@@ -112,7 +112,7 @@ create.BBs.W <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/
   
   
   #load up teh data into a single database
-  fls <- dir(seqs_fldr)
+  fls <- list.files(seqs_fldr, ".dbf$")
   print(paste0("You have ", length(fls), " sequences."))
   d <- do.call(rbind, lapply(1:length(fls), function(i){
     db <- read.dbf(paste(seqs_fldr, fls[i],sep="/"), as.is=TRUE)
@@ -126,20 +126,6 @@ create.BBs.W <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/
   d$date <- as.POSIXct(strptime(d$date,format = "%Y-%m-%d %H:%M:%S"), tz="GMT") 
   if(any(is.na(d$date))) 
     stop("There is an issue with your date columns. See Error 2a.")
-  
-  # remove any sequences that do not have > mindays
-  jul <- as.numeric(strftime(d$date, format = "%j", tz = "GMT"))
-  u <- unique(d$wint)
-  ids2keep <- do.call(c, lapply(1:length(u), function(i){
-    if(length(unique(jul[d$wint == u[i]])) >= mindays){
-      return(u[i])
-    }else{
-      return(NULL)
-    }
-  }))
-  print(paste0("You are removing ", length(u)-length(ids2keep), " sequences because there are less than ", mindays, " days worth of data!"))
-  
-  d <- d[d$wint %in% ids2keep,]
   
   #Create a grid to calculate BBs over
   dsp <- d
@@ -156,7 +142,7 @@ create.BBs.W <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/
   
   u <- unique(d$wint)
   
-  sfInit(parallel = T, cpus = cores)   #must change the cpus
+  sfInit(parallel = T, cpus = ifelse(length(u)<cores, length(u), cores))   #must change the cpus
   sfExport("d", "grd", "u", "max.lag", "location.error","BMvar","BrownianBridgeCustom",
            "BBs_out_fldr","time.step","mult4buff")
   sfLibrary(BBMM)
@@ -168,40 +154,8 @@ create.BBs.W <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/
     temp <- d[d$wint==u[i],]
     temp <- temp[order(temp$date),]
     
-    #prepare only the cells to run BB over
-    ext2 <- raster::extent(temp)
-    multiplyers <- c((ext2[2]-ext2[1])*mult4buff, (ext2[4]-ext2[3])*mult4buff)   # add about mult4buff around the edges of your extent (you can adjust this if necessary)
-    ext2 <- raster::extend(ext2, multiplyers)
-    cels <- raster::cellsFromExtent(grd, ext2)
-
-    # this is the function to calculate the regular BB
-    if(class(BMvar)=="NULL"){
-      bb <- R.utils::withTimeout({
-        try(BBMM::brownian.bridge(x=temp$x,
-                                  y=temp$y,
-                                  time.lag=diff(as.numeric(temp$date)/60),
-                                  area.grid=coordinates(grd)[cels,],
-                                  max.lag=max.lag*60,
-                                  time.step=time.step,
-                                  location.error=location.error), #this is the location error of your collars
-            silent=TRUE)
-      }, envir=environment(), timeout = 10800, onTimeout = "warning")
-    }else{ #THIS IS FMV code
-      bb <- R.utils::withTimeout({
-        try(BrownianBridgeCustom(x=temp$x,
-                                 y=temp$y,
-                                 time.lag=diff(as.numeric(temp$date)/60),
-                                 area.grid=coordinates(grd)[cels,],
-                                 max.lag=max.lag*60,
-                                 time.step=time.step,
-                                 BMvar=BMvar,
-                                 location.error=location.error), #this is the location error of your collars
-            silent=TRUE)
-      }, envir=environment(), timeout = 10800, onTimeout = "warning")
-    }
-    
-    #write out results to file too, so if there is an error you don't loose all your work!
-    if(class(bb)=="try-error" | class(bb)== "character" | length(bb$probability) == 1){
+    jul <- as.numeric(strftime(temp$date, format = "%j", tz = "GMT"))
+    if(length(unique(jul)) < mindays){
       return(data.frame(input.file=u[i],
                         brownian.motion.variance=NA,
                         grid.size=NA,
@@ -212,38 +166,128 @@ create.BBs.W <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/
                         Start.Date=min(temp$date),
                         End.Date=max(temp$date),
                         num.days=length(unique(strftime(temp$date, format = "%j", tz = "GMT"))),
-                        errors=ifelse(class(bb)=="try-error", attr(bb, "condition")$message, "Ran too long or other issue")))    
+                        errors=paste0("Less than ",mindays, " days of data.")))
     }else{
-      
-      
-      #set to 0 any values that are outside of the < 0.9999 contour
-      cutoff <- sort(bb$probability, decreasing=TRUE)
-      vlscsum <- cumsum(cutoff)
-      cutoff <- cutoff[vlscsum > .9999][1]
-      bb$probability[bb$probability < cutoff] <- 0
-      
-      #rescale probabilities so they equal 1
-      bb$probability <- bb$probability/sum(bb$probability)
-      
-      #output ASCII file
-      m <- data.frame(x=coordinates(grd)[,1], y=coordinates(grd)[,2],z=0)
-      m$z[cels] <- bb$probability
-      m <- SpatialPixelsDataFrame(points = m[c("x", "y")], data=m)
-      m <- as(m, "SpatialGridDataFrame")
-      write.asciigrid(m, paste(BBs_out_fldr,"/",u[i],"_ASCII.asc",sep=""), attr=3)
-      
-      #gather summary info
-      return(data.frame(input.file=u[i],
-                        brownian.motion.variance=round(bb[[1]],2),
-                        grid.size=length(bb$x),
-                        grid.cell.size=abs(bb$x[1]-bb$x[2]),
-                        date.created=Sys.time(),
-                        execution_time=paste(round(difftime(Sys.time(), start.time, units="min"),2)," minutes",sep=""),
-                        num.locs=nrow(temp),
-                        Start.Date=min(temp$date),
-                        End.Date=max(temp$date),
-                        num.days=length(unique(strftime(temp$date, format = "%j", tz = "GMT"))),
-                        errors="None"))
+      if(nrow(temp) <= length(unique(jul))){
+        return(data.frame(input.file=u[i],
+                          brownian.motion.variance=NA,
+                          grid.size=NA,
+                          grid.cell.size=NA,
+                          date.created=Sys.time(),
+                          execution_time=paste(round(difftime(Sys.time(), start.time, units="min"),2)," minutes",sep=""),
+                          num.locs=nrow(temp),
+                          Start.Date=min(temp$date),
+                          End.Date=max(temp$date),
+                          num.days=length(unique(strftime(temp$date, format = "%j", tz = "GMT"))),
+                          errors="Only 1 point per day, on average."))
+      }else{
+        if(nrow(temp) < 4){
+          return(data.frame(input.file=u[i],
+                            brownian.motion.variance=NA,
+                            grid.size=NA,
+                            grid.cell.size=NA,
+                            date.created=Sys.time(),
+                            execution_time=paste(round(difftime(Sys.time(), start.time, units="min"),2)," minutes",sep=""),
+                            num.locs=nrow(temp),
+                            Start.Date=min(temp$date),
+                            End.Date=max(temp$date),
+                            num.days=length(unique(strftime(temp$date, format = "%j", tz = "GMT"))),
+                            errors="Less than 4 points."))
+        }else{
+          
+          #prepare only the cells to run BB over
+          ext2 <- raster::extent(temp)
+          multiplyers <- c((ext2[2]-ext2[1])*mult4buff, (ext2[4]-ext2[3])*mult4buff)   # add about mult4buff around the edges of your extent (you can adjust this if necessary)
+          ext2 <- raster::extend(ext2, multiplyers)
+          cels <- raster::cellsFromExtent(grd, ext2)
+          
+          # this is the function to calculate the regular BB
+          if(class(BMvar)=="NULL"){
+            bb <- R.utils::withTimeout({
+              try(BBMM::brownian.bridge(x=temp$x,
+                                        y=temp$y,
+                                        time.lag=diff(as.numeric(temp$date)/60),
+                                        area.grid=coordinates(grd)[cels,],
+                                        max.lag=max.lag*60,
+                                        time.step=time.step,
+                                        location.error=location.error), #this is the location error of your collars
+                  silent=TRUE)
+            }, envir=environment(), timeout = 10800, onTimeout = "warning")
+          }else{ #THIS IS FMV code
+            bb <- R.utils::withTimeout({
+              try(BrownianBridgeCustom(x=temp$x,
+                                       y=temp$y,
+                                       time.lag=diff(as.numeric(temp$date)/60),
+                                       area.grid=coordinates(grd)[cels,],
+                                       max.lag=max.lag*60,
+                                       time.step=time.step,
+                                       BMvar=BMvar,
+                                       location.error=location.error), #this is the location error of your collars
+                  silent=TRUE)
+            }, envir=environment(), timeout = 10800, onTimeout = "warning")
+          }
+          
+          #write out results to file too, so if there is an error you don't loose all your work!
+          if(class(bb)=="try-error" | class(bb)== "character"){
+            return(data.frame(input.file=u[i],
+                              brownian.motion.variance=NA,
+                              grid.size=NA,
+                              grid.cell.size=NA,
+                              date.created=Sys.time(),
+                              execution_time=paste(round(difftime(Sys.time(), start.time, units="min"),2)," minutes",sep=""),
+                              num.locs=nrow(temp),
+                              Start.Date=min(temp$date),
+                              End.Date=max(temp$date),
+                              num.days=length(unique(strftime(temp$date, format = "%j", tz = "GMT"))),
+                              errors=ifelse(class(bb)=="try-error", attr(bb, "condition")$message, "Ran too long or other issue")))    
+          }else{
+            if(length(bb$probability) == 1 | all(is.na(bb$probability))==TRUE){
+              return(data.frame(input.file=u[i],
+                                brownian.motion.variance=NA,
+                                grid.size=NA,
+                                grid.cell.size=NA,
+                                date.created=Sys.time(),
+                                execution_time=paste(round(difftime(Sys.time(), start.time, units="min"),2)," minutes",sep=""),
+                                num.locs=nrow(temp),
+                                Start.Date=min(temp$date),
+                                End.Date=max(temp$date),
+                                num.days=length(unique(strftime(temp$date, format = "%j", tz = "GMT"))),
+                                errors="BB Failed for unknown reason"))    
+              
+            }else{
+
+            #set to 0 any values that are outside of the < 0.9999 contour
+            cutoff <- sort(bb$probability, decreasing=TRUE)
+            vlscsum <- cumsum(cutoff)
+            cutoff <- cutoff[vlscsum > .9999][1]
+            bb$probability[bb$probability < cutoff] <- 0
+            
+            #rescale probabilities so they equal 1
+            bb$probability <- bb$probability/sum(bb$probability)
+            
+            #output ASCII file
+            m <- data.frame(x=coordinates(grd)[,1], y=coordinates(grd)[,2],z=0)
+            m$z[cels] <- bb$probability
+            m <- SpatialPixelsDataFrame(points = m[c("x", "y")], data=m)
+            m <- as(m, "SpatialGridDataFrame")
+            write.asciigrid(m, paste(BBs_out_fldr,"/",u[i],"_ASCII.asc",sep=""), attr=3)
+            
+            #gather summary info
+            return(data.frame(input.file=u[i],
+                              brownian.motion.variance=round(bb[[1]],2),
+                              grid.size=length(bb$x),
+                              grid.cell.size=abs(bb$x[1]-bb$x[2]),
+                              date.created=Sys.time(),
+                              execution_time=paste(round(difftime(Sys.time(), start.time, units="min"),2)," minutes",sep=""),
+                              num.locs=nrow(temp),
+                              Start.Date=min(temp$date),
+                              End.Date=max(temp$date),
+                              num.days=length(unique(strftime(temp$date, format = "%j", tz = "GMT"))),
+                              errors="None"))
+            }
+          }
+        }
+      }
     }
   }))
   sfStop()
