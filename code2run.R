@@ -45,7 +45,7 @@ create.BBs(seqs_fldr = "C:/Users/jmerkle/Desktop/tab6output/sequences",    #this
 # step 2 ALTERNATIVE. (This code does the ctmm alternative method). You'll want to parralellize this one, fo sho.
 # This also spits out a metadata file of the results of the CTMM analysis
 # devtools::install_github("ctmm-initiative/ctmm")   # need to download specific packages for what we're doing
-create.CTMMs(seqs_fldr = "C:/Users/jmerkle/Desktop/tab6output/sequences12hr",  #this is the folder where all the sequences are saved
+create.CTMMs(seqs_fldr = "C:/Users/jmerkle/Desktop/tab6output/sequences",  #this is the folder where all the sequences are saved
              CTMMs_out_fldr = "C:/Users/jmerkle/Desktop/tab6output/UDs2", #it will make this folder for you
              metadata_fldr="C:/Users/jmerkle/Desktop/tab6output",
              cores=11,   ## number of cores/threads to use for parrallel processing
