@@ -59,6 +59,7 @@ create.CTMMs(seqs_fldr = "C:/Users/jmerkle/Desktop/tab6output/sequences",  #this
 create.BB.avgs(BBs_fldr = "C:/Users/jmerkle/Desktop/tab6output/UDs",    #this is the folder where all the UDs are saved.
                pop_BBs_out_fldr = "C:/Users/jmerkle/Desktop/tab6output/UDs_pop",  #it will make this folder for you
                pop_footprint_out_fldr = "C:/Users/jmerkle/Desktop/tab6output/Footprints_pop",  #it will make this folder for you
+               cores=11,    ## number of cores/threads to use for parrallel processing
                contour=99,  ## Contour level used to create footprints for corridor analysis
                proj_of_ascs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")  # this is the proj4string of your data. (should be carried through from previous functions)
 
@@ -119,6 +120,7 @@ create.BBs.W(seqs_fldr = "C:/Users/jmerkle/Desktop/tab6output/sequencesW",    #t
 #Step 3. Calculate average BBs for each individual and and a population UD.
 create.BB.avgs.W(BBs_fldr = "C:/Users/jmerkle/Desktop/tab6output/UDsW",    #this is the folder where all the UDs are saved.
                  pop_BBs_out_fldr = "C:/Users/jmerkle/Desktop/tab6output/UDs_popW",  #it will make this folder for you
+                 cores=11,    ## number of cores/threads to use for parrallel processing
                  proj_of_ascs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")    # this is the proj4string of your data. (should be carried through from previous functions)
 
 

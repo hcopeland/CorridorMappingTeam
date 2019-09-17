@@ -5,6 +5,7 @@
 
 create.BB.avgs.W <- function(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UDsW",
                              pop_BBs_out_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/UD_popW",
+                             cores=11,
                              proj_of_ascs="+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"){
   
   #manage packages
@@ -72,14 +73,16 @@ create.BB.avgs.W <- function(BBs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6outp
     print(paste0("End time: ", Sys.time()))
     return("Done. Check your folders. Note that you only have 1 individual, so no averaging occured!")
   }else{
-    bb <- raster(paste(pop_BBs_out_fldr, "/", fls[1], sep=""))
-    for(i in 2:length(fls)){
-      bb <- addLayer(bb, raster(paste(pop_BBs_out_fldr, "/", fls[i], sep="")))
+    bb <- stack(paste(pop_BBs_out_fldr, "/", fls, sep=""))
+    if(ncell(bb)*nlayers(bb) < 10000000){
+      bb <- mean(bb)
+      bb <- bb/sum(values(bb))   #verify that they add up to 1
+    }else{
+      beginCluster(n=cores)
+      bb <- clusterR(bb, fun=calc, list(fun=sum))
+      endCluster()
+      bb <- bb/sum(values(bb))   #verify that they add up to 1
     }
-    if(nlayers(bb) != length(fls))
-      stop("You have a problem. See error 3.")
-    bb <- mean(bb)
-    bb <- bb/sum(values(bb))   #verify that they add up to 1
     #output averaged individual ASCII file
     m <- as(bb, "SpatialGridDataFrame")
     cs <- slot(slot(m, "grid"), "cellsize") 
