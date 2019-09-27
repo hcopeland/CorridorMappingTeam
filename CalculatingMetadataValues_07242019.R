@@ -1,5 +1,5 @@
 ###### Code to calculate Metadata Values for Corridor Mapping
-###### Emily Gelzer & Jerod Merkle
+###### Emily Gelzer & Jerod Merkle & Holly Copeland
 ###### Contact: egelzer@uwyo.edu
 
 
@@ -8,14 +8,22 @@ library(lubridate)
 library(stringr)
 library(foreign)
 
+###CHANGE THESE VALUES TO MATCH YOUR DATA (no need to change anything below this section)
+#Set Location of Migration Mapper Output File ----CHANGE THESE FILES AND FILEPATH!!!!!!!!!!!!
+setwd("C:/Holly/Work/Projects/EasternYellowstoneMuleDeer2016/Data/CMT_Dubois_8262019") 
+migtime = "migtime_20190701131444.csv"
+pointsout = "pointsOut_20190701131444.dbf"
+
+###Get Sample Size
+
 # ---------------------------------------------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
 
 ### Code to Calculate Median Migration Start and End Dates (Spring and Fall)
 
-# Bring in migtime_number.csv ---- CHANGE THIS FILEPATH!!!!!!!!!!!
-migtime <- read.csv("C:/Users/egelzer/Documents/MigrationMapper/MigrationMapperv1.3/Meeteetse_MD/Meeteetse_MD_Export/migtime_20190610151051.csv")
-
+# Bring in migtime_number.csv
+migtime <- read.csv(migtime, stringsAsFactors=TRUE)
+str(migtime)
 # Convert start_season and end_season columns to "date" format
 
 migtime$startSpring <- ymd(migtime$startSpring)
@@ -107,7 +115,7 @@ print(paste0("The End Migration Date is ", EndMig))
 ###### Code to Calculate Average fix rate (in hour) for corridor and winter range analyses 
 
 # Bring in the pointsout DBF file ---- CHANGE THIS FILEPATH
-pointsout <- read.dbf("C:/Users/egelzer/Documents/MigrationMapper/MigrationMapperv1.3/Meeteetse_MD/Meeteetse_MD_Export/pointsOut_20190610151051.dbf", as.is = FALSE)
+pointsout <- read.dbf(pointsout, as.is = FALSE)
 
 head(pointsout)
 
@@ -121,12 +129,12 @@ table(pointsout$seas)
 ###### Contact: mcuzzocr@uwyo.edu
 
 ### Bring in metadata.csv
-metadata <- read.csv("C:/Users/egelzer/Documents/MigrationMapper/MigrationMapperv1.3/Meeteetse_MD/Meeteetse_MD_Export/metadata.csv")
+metadata <- read.csv("metadata.csv")
 metadata$input.file<- as.character(metadata$input.file)
 
 #split season string and calculate length
-sp.length<-mean(metadata$num.days[!is.na(str_extract(metadata$input.file, pattern = "sp"))])
-fa.length<-mean(metadata$num.days[!is.na(str_extract(metadata$input.file, pattern = "fa"))])
+sp.length<-round(mean(metadata$num.days[!is.na(str_extract(metadata$input.file, pattern = "sp"))]))
+fa.length<-round(mean(metadata$num.days[!is.na(str_extract(metadata$input.file, pattern = "fa"))]))
 
 print(paste0("The mean spring migration length is ", sp.length, " days"))
 print(paste0("The mean fall migration length is ", fa.length, " days"))
@@ -138,25 +146,44 @@ print(paste0("The mean fall migration length is ", fa.length, " days"))
 ###### Code to Calculate how many fall and spring squences are used in analyses 
 
 ### Get a character string of the files in the specified folder and have it print the number of squences within that folder
-UDs <- dir(path = "C:/Users/egelzer/Documents/MigrationMapper/MigrationMapperv1.3/Meeteetse_MD/Meeteetse_MD_Export/UDs")
-fls_UDs_fall <- list.files("C:/Users/egelzer/Documents/MigrationMapper/MigrationMapperv1.3/Meeteetse_MD/Meeteetse_MD_Export/UDs", pattern="[0-9]{1,3}[_]{1}[fa]{1,2}[0-9]{1,2}[_]{1}[ASCII]{1,5}\\.asc")
-fls_UDs_spring <- list.files("C:/Users/egelzer/Documents/MigrationMapper/MigrationMapperv1.3/Meeteetse_MD/Meeteetse_MD_Export/UDs", pattern="[0-9]{1,3}[_]{1}[sp]{1,2}[0-9]{1,2}[_]{1}[ASCII]{1,5}\\.asc")
+directory  <-  paste0(getwd(),"/UDs")
+UDs <- dir(path = directory, pattern = "*.asc")
 
-print(paste0("You have ", length(UDs), " sequences."))
+directory  <-  paste0(getwd(),"/UDsW")
+UDsW <- dir(path = directory,pattern = "*.asc")
+
+directory  <-  paste0(getwd(),"/UDs_pop")
+UDs_pop <- dir(path = directory,pattern = "*.asc")
+
+directory  <-  paste0(getwd(),"/UDs_popW")
+UDs_popW <- dir(path = directory, pattern = "*.asc")
+
+directory <-  paste0(getwd(),"/UDs")
+fls_UDs_fall <- list.files(directory, pattern="[0-9]{1,3}[_]{1}[fa]{1,2}[0-9]{1,2}[_]{1}[ASCII]{1,5}\\.asc")
+fls_UDs_spring <- list.files(directory, pattern="[0-9]{1,3}[_]{1}[sp]{1,2}[0-9]{1,2}[_]{1}[ASCII]{1,5}\\.asc")
+
+print(paste0("You have ", length(UDs), " migration sequences from " ,length(UDs_pop), " individuals"))
 print(paste0("You have ", length(fls_UDs_fall) , " fall sequences."))
 print(paste0("You have ", length(fls_UDs_spring), " spring sequences."))
+print(paste0("You have ", length(UDsW), " winter sequences from " ,length(UDs_popW), " individuals"))
+
+##
+#Sample Size
+UDs_pop <- as.list (UDs_pop)
+UDs_pop <- as.list (UDs_popW)
+allUDspop <- c(UDs_pop, UDs_popW)
+unique1 <- unique(allUDspop)
+print(paste0("Sample size = ", length(unique1), " individuals "))
 
 rm(UDs, fls_UDs_fall, fls_UDs_spring)
-
 # --------------------------------------------------------------------------------------------------------------------
 # --------------------------------------------------------------------------------------------------------------------
 
 ###### Calculate average winter length
 ###### Adopted from:  Calculate average migration length by season, by Matthew Cuzzocreo, mcuzzocr@uwyo.edu 
 
-
 ### Bring in metadata.csv
-metadata_winter <- read.csv("C:/Users/egelzer/Documents/MigrationMapper/MigrationMapperv1.3/Meeteetse_MD/Meeteetse_MD_Export/metadata_winter.csv")
+metadata_winter <- read.csv("metadata_winter.csv")
 metadata_winter$input.file<- as.character(metadata_winter$input.file)
 
 #split season string and calculate length
@@ -169,13 +196,10 @@ rm(winter.length)
 # --------------------------------------------------------------------------------------------------------------------
 # --------------------------------------------------------------------------------------------------------------------
 
-# ---------------------------------------------------------------------------------------------------------------------
-# ---------------------------------------------------------------------------------------------------------------------
-
 ### Code to Calculate Winter Median Start and End Dates 
 
 # Bring in migtime_number.csv ---- CHANGE THIS FILEPATH!!!!!!!!!!!
-metadata_winter <- read.csv("C:/Users/egelzer/Documents/MigrationMapper/MigrationMapperv1.3/Meeteetse_MD/Meeteetse_MD_Export/metadata_winter.csv")
+metadata_winter <- read.csv("metadata_winter.csv")
 
 # Convert start_season and end_season columns to "date" format
 
@@ -216,12 +240,16 @@ medianendWinter <- paste(month(median_endWinter), day(median_endWinter), sep ="-
 print(paste0("The Median Winter Start Time is ", medianstartWinter))
 print(paste0("The Median Winter End Time is ", medianendWinter))
 
+####Calculate areas
+migarea <- read.csv("final_products/output_areas.csv")
+migarea$migacres <- round(migarea$GRIDCODE_1_area * 247.10)
+migarea$stopacres <- round(migarea$stopover_area * 247.10)
+print (paste0("Migration Corridor Area =", migarea$migacres, " acres"))
+print (paste0("Stopover Area =", migarea$stopacres, " acres"))
+
+winterarea <- read.csv("final_productsW/output_areas_winter.csv")
+winterarea$winter05acres <- round(winterarea$GRIDCODE_0.5_area * 247.10)
+print (paste0("The Winter Range Area=", winterarea$winter05acres, " acres"))
 
 rm(metadata_winter, JD_startWinter, JD_endWinter, median_endWinter, median_endWinter_J, medianendWinter,
    median_startWinter, median_startWinter_J)
-
-
-
-
-
-
