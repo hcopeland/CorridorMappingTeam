@@ -1,3 +1,4 @@
+
 ###### Code to calculate Metadata Values for Corridor Mapping
 ###### Emily Gelzer & Jerod Merkle & Holly Copeland
 ###### Contact: egelzer@uwyo.edu
@@ -244,7 +245,7 @@ print(paste0("The Median Winter End Time is ", medianendWinter))
 migarea <- read.csv("final_products/output_areas.csv")
 migarea$migacres <- round(migarea$GRIDCODE_1_area * 247.10)
 migarea$stopacres <- round(migarea$stopover_area * 247.10)
-print (paste0("Migration Corridor Area =", migarea$migacres, " acres"))
+print (paste0("Migration Corridor Area (footprint) =", migarea$migacres, " acres"))
 print (paste0("Stopover Area =", migarea$stopacres, " acres"))
 
 winterarea <- read.csv("final_productsW/output_areas_winter.csv")
