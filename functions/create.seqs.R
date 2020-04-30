@@ -55,7 +55,7 @@ create.seqs <- function(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output"
   print("Identifying sequences...")
   # loop through spring migrations
   for(i in 1:nrow(mt)){
-    if(is.na(mt$startSpring[i])==FALSE & is.na(mt$shouldSpringRun[i])==FALSE){
+    if(is.na(mt$startSpring[i])==FALSE & mt$springMig[i]==1){
       tmp <- d[d$id == mt$newUid[i] & d$date >= mt$startSpring[i] & d$date <= mt$endSpring[i],]
       tmp <- as.data.frame(tmp)    # get it out of sp object
       tmp$date <- as.character(tmp$date)    #need to switch this back to character for dbf files
@@ -66,9 +66,9 @@ create.seqs <- function(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output"
     }
   }
   
-  # loop through spring migrations
+  # loop through fall migrations
   for(i in 1:nrow(mt)){
-    if(is.na(mt$startFall[i])==FALSE & is.na(mt$shouldFallRun[i])==FALSE){
+    if(is.na(mt$startFall[i])==FALSE & mt$fallMig[i]==1){
       tmp <- d[d$id == mt$newUid[i] & d$date >= mt$startFall[i] & d$date <= mt$endFall[i],]
       tmp <- as.data.frame(tmp)    # get it out of sp object
       tmp$date <- as.character(tmp$date)    #need to switch this back to character for dbf files
