@@ -188,9 +188,9 @@ create.corridors.stopovers <- function(PopUD_asc = "C:/Users/jmerkle/Desktop/Map
   
   grdcds <- unique(bigData$GRIDCODE)
   for(i in 1:length(grdcds)){
-    toreport$temp <- round(gArea(bigData[bigData$GRIDCODE >= grdcds[i],], byid = FALSE)/1000000,1)
+    toreport$temp <- round(gArea(bigData[bigData$GRIDCODE == grdcds[i],], byid = FALSE)/1000000,1)
     names(toreport)[names(toreport)=="temp"] <- paste0("GRIDCODE_",grdcds[i],"_area")
-    print(paste0("The area of GRIDCODE ", grdcds[i], " is ", round(gArea(bigData[bigData$GRIDCODE >= grdcds[i],], byid = FALSE)/1000000,1), " square KM."))
+    print(paste0("The area of GRIDCODE ", grdcds[i], " is ", round(gArea(bigData[bigData$GRIDCODE == grdcds[i],], byid = FALSE)/1000000,1), " square KM."))
   }
   write.csv(toreport, file = paste0(out_fldr,"/output_areas.csv"), row.names = FALSE)
    
