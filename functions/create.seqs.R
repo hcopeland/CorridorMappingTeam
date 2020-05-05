@@ -60,7 +60,7 @@ create.seqs <- function(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output"
       tmp <- as.data.frame(tmp)    # get it out of sp object
       tmp$date <- as.character(tmp$date)    #need to switch this back to character for dbf files
       names(tmp) <- c("id","date","x","y")   # rename columns
-      write.dbf(tmp, file = paste(out_fldr,"/",mt$newUid[i], "_sp",substr(mt$year_bio[i],3,4),".dbf",sep=""))    #write as dbf
+      write.dbf(tmp, file = paste(out_fldr,"/",mt$newUid[i], "_sp",substr(mt$nsdYear[i],3,4),".dbf",sep=""))    #write as dbf
     }else{
       next
     }
@@ -73,7 +73,7 @@ create.seqs <- function(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output"
       tmp <- as.data.frame(tmp)    # get it out of sp object
       tmp$date <- as.character(tmp$date)    #need to switch this back to character for dbf files
       names(tmp) <- c("id","date","x","y")   # rename columns
-      write.dbf(tmp, file = paste(out_fldr,"/",mt$newUid[i], "_fa",substr(mt$year_bio[i],3,4),".dbf",sep=""))    #write as dbf
+      write.dbf(tmp, file = paste(out_fldr,"/",mt$newUid[i], "_fa",substr(mt$nsdYear[i],3,4),".dbf",sep=""))    #write as dbf
     }else{
       next
     }
