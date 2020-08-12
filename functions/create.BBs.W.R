@@ -212,7 +212,7 @@ create.BBs.W <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/
                                         time.step=time.step,
                                         location.error=location.error), #this is the location error of your collars
                   silent=TRUE)
-            }, envir=environment(), timeout = 10800, onTimeout = "warning")
+            }, envir=environment(), timeout = 43200, onTimeout = "warning")
           }else{ #THIS IS FMV code
             bb <- R.utils::withTimeout({
               try(BrownianBridgeCustom(x=temp$x,
@@ -224,7 +224,7 @@ create.BBs.W <- function(seqs_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6output/
                                        BMvar=BMvar,
                                        location.error=location.error), #this is the location error of your collars
                   silent=TRUE)
-            }, envir=environment(), timeout = 10800, onTimeout = "warning")
+            }, envir=environment(), timeout = 43200, onTimeout = "warning")
           }
           
           #write out results to file too, so if there is an error you don't loose all your work!
