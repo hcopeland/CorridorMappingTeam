@@ -34,9 +34,7 @@ create.seqs.W <- function(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6outpu
   fl$yr <- as.numeric(ifelse(as.numeric(fl$yr) > 80, paste0("19",fl$yr), paste0("20",fl$yr)))
   fl$Start.Date <- as.POSIXct(strptime(fl$Start.Date,format = "%Y-%m-%d %H:%M:%S"), tz="GMT")
   fl$End.Date <- as.POSIXct(strptime(fl$End.Date,format = "%Y-%m-%d %H:%M:%S"), tz="GMT")
-  # fl$Start.Date <- as.POSIXct(strptime(paste0("2018", substr(fl$Start.Date,5,19)),format = "%Y-%m-%d %H:%M:%S"), tz="GMT")
-  # fl$End.Date <- as.POSIXct(strptime(paste0("2018", substr(fl$End.Date,5,19)),format = "%Y-%m-%d %H:%M:%S"), tz="GMT")
-  
+
   if(use_same_annual_dates==TRUE){
     
     sp <- fl[fl$seas == "sp",]
@@ -60,7 +58,7 @@ create.seqs.W <- function(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6outpu
     dts$wint.start <- as.character(dts$wint.start)
     dts$wint.end <- as.character(dts$wint.end)
     mnths <- as.numeric(substr(na.omit(dts$wint.start), 6,7))
-    mn_strt <- mean(as.Date(strptime(paste0(ifelse(mnths > 8, "2017","2018"),"-",substr(na.omit(as.character(dts$wint.start)),6,10)),format = "%Y-%m-%d")))
+    mn_strt <- mean(as.Date(strptime(paste0(ifelse(mnths > 8, "2015","2016"),"-",substr(na.omit(as.character(dts$wint.start)),6,10)),format = "%Y-%m-%d")))
     if(as.numeric(substr(mn_strt,6,7)) > 8){
       yrs <- substr(dts$winter[is.na(dts$wint.start)==TRUE],1,4)
     }else{
@@ -69,7 +67,7 @@ create.seqs.W <- function(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6outpu
     dts$wint.start[is.na(dts$wint.start)==TRUE] <- paste0(yrs, "-", substr(mn_strt,6,10))
     
     mnths <- as.numeric(substr(na.omit(dts$wint.end), 6,7))
-    mn_end <- mean(as.Date(strptime(paste0(ifelse(mnths > 8, "2017","2018"),"-",substr(na.omit(as.character(dts$wint.end)),6,10)),format = "%Y-%m-%d")))
+    mn_end <- mean(as.Date(strptime(paste0(ifelse(mnths > 8, "2015","2016"),"-",substr(na.omit(as.character(dts$wint.end)),6,10)),format = "%Y-%m-%d")))
     if(as.numeric(substr(mn_end,6,7)) > 8){
       yrs <- substr(dts$winter[is.na(dts$wint.end)==TRUE],1,4)
     }else{
@@ -241,7 +239,7 @@ create.seqs.W <- function(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6outpu
     
     
     mnths <- as.numeric(substr(na.omit(dts$wint.start), 6,7))
-    mn_strt <- mean(as.Date(strptime(paste0(ifelse(mnths > 8, "2017","2018"),"-",substr(na.omit(as.character(dts$wint.start)),6,10)),format = "%Y-%m-%d")))
+    mn_strt <- mean(as.Date(strptime(paste0(ifelse(mnths > 8, "2015","2016"),"-",substr(na.omit(as.character(dts$wint.start)),6,10)),format = "%Y-%m-%d")))
     if(as.numeric(substr(mn_strt,6,7)) > 8){
       yrs <- substr(dts$wintr[is.na(dts$wint.start)==TRUE],1,4)
     }else{
@@ -250,7 +248,7 @@ create.seqs.W <- function(shpfl_fldr = "C:/Users/jmerkle/Desktop/Mapp2/tab6outpu
     dts$wint.start[is.na(dts$wint.start)==TRUE] <- paste0(yrs, "-", substr(mn_strt,6,10), " 23:00:00")
     
     mnths <- as.numeric(substr(na.omit(dts$wint.end), 6,7))
-    mn_end <- mean(as.Date(strptime(paste0(ifelse(mnths > 8, "2017","2018"),"-",substr(na.omit(as.character(dts$wint.end)),6,10)),format = "%Y-%m-%d")))
+    mn_end <- mean(as.Date(strptime(paste0(ifelse(mnths > 8, "2015","2016"),"-",substr(na.omit(as.character(dts$wint.end)),6,10)),format = "%Y-%m-%d")))
     if(as.numeric(substr(mn_end,6,7)) > 8){
       yrs <- substr(dts$wintr[is.na(dts$wint.end)==TRUE],1,4)
     }else{
